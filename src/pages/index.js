@@ -17,6 +17,29 @@ import TimeSlider from "@/components/TimeSlider/TimeSlider";
 import styles from "@/styles/Home.module.css";
 
 /**
+ * Custom component to display date and time with icons in a consistent format.
+ * When no date is provided, it falls back to the provided fallback values.
+ */
+function DateTimeDisplay({
+  date,
+  time,
+  fallbackDate = "Mon (05/12)",
+  fallbackTime = "10:00 AM",
+}) {
+  const displayDate = date ? format(date, "EEE (MM/dd)") : fallbackDate;
+  const displayTime = date ? time : fallbackTime;
+  return (
+    <div className="flex items-center w-full bg-[#f8f8f8] px-4 py-2 text-black">
+      <MdCalendarMonth size={16} className="mr-1 text-gray-500" />
+      <span className="text-[14px]">{displayDate}</span>
+      <span className="mx-1 text-gray-500">|</span>
+      <MdAccessTime size={16} className="mr-1 text-gray-500" />
+      <span className="text-[14px]">{displayTime}</span>
+    </div>
+  );
+}
+
+/**
  * Example "BookingPage" component
  */
 export default function BookingPage() {
@@ -31,30 +54,6 @@ export default function BookingPage() {
 
   // Popover open state for the date/time calendar
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  // Helper to format date + time for the input fields
-  const getDisplayValue = (date, time, fallback) =>
-    date ? `${format(date, "EEE (MM/dd)")} ${time}` : fallback;
-
-  // Custom component to display date and time with icons
-  function DateTimeDisplay({ date, time, fallback }) {
-    if (!date) {
-      return (
-        <div className="flex items-center w-full bg-[#f8f8f8] border rounded px-4 py-1 text-black">
-          {fallback}
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center w-full bg-[#f8f8f8]  px-4 py-2 text-black">
-        <MdCalendarMonth size={15} className="mr-1 text-gray-500" />
-        <span className="text-[14px]">{format(date, "EEE (MM/dd)")}</span>
-        <span className="mx-1 text-gray-500">|</span>
-        <MdAccessTime size={15} className="mr-1 text-gray-500" />
-        <span className="text-[14px]">{time}</span>
-      </div>
-    );
-  }
 
   // ---------------------------
   // 2) STUDIO GROUPS + CHECKBOXES
@@ -121,21 +120,13 @@ export default function BookingPage() {
     const bothStudiosIds = studioGroups[0].items.map((item) => item.id);
     const extensionIds = studioGroups[1].items.map((item) => item.id);
 
-    // Count how many total in each group
-    const totalBoth = bothStudiosIds.length; // e.g. 3
-    const totalExt = extensionIds.length; // e.g. 3
-
-    // How many are selected in each group
+    // Count how many are selected in each group
     const selectedBoth = selectedAddOns.filter((id) =>
       bothStudiosIds.includes(id)
     ).length;
     const selectedExt = selectedAddOns.filter((id) =>
       extensionIds.includes(id)
     ).length;
-
-    // How many remain unselected in each group
-    const notSelectedBoth = totalBoth - selectedBoth;
-    const notSelectedExt = totalExt - selectedExt;
 
     // If none are selected at all
     if (selectedAddOns.length === 0) {
@@ -144,12 +135,12 @@ export default function BookingPage() {
 
     // If only items from the first group are selected
     if (selectedBoth > 0 && selectedExt === 0) {
-      return `BOTH STUDIOS`;
+      return "BOTH STUDIOS";
     }
 
     // If only items from the second group are selected
     if (selectedExt > 0 && selectedBoth === 0) {
-      return `THE EXTENSION`;
+      return "THE EXTENSION";
     }
 
     // If items from both groups are selected
@@ -173,15 +164,15 @@ export default function BookingPage() {
               <PopoverTrigger asChild>
                 <Button
                   variant="default"
-                  className="w-full bg-[#f8f8f8]  justify-start text-black hover:bg-[#f8f8f8]"
+                  className="w-full bg-[#f8f8f8] justify-start text-black hover:bg-[#f8f8f8]"
                 >
-                  <MdLocationOn />
+                  <MdLocationOn className="mr-1" />
                   {getStudioTriggerLabel()}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                align="start" // aligns the popover's left edge with the trigger
-                side="bottom" // optionally specify the side; default is bottom
+                align="start"
+                side="bottom"
                 className="bg-[#f8f8f8] p-4 w-[80%] text-black"
               >
                 {studioGroups.map((group) => (
@@ -224,7 +215,8 @@ export default function BookingPage() {
                     <DateTimeDisplay
                       date={startDate}
                       time={startTime}
-                      fallback="Mon (05/12) 10:00 AM"
+                      fallbackDate="Mon (05/12)"
+                      fallbackTime="10:00 AM"
                     />
                   </div>
 
@@ -236,7 +228,8 @@ export default function BookingPage() {
                     <DateTimeDisplay
                       date={endDate}
                       time={endTime}
-                      fallback="Tue (05/12) 10:00 AM"
+                      fallbackDate="Tue (05/12)"
+                      fallbackTime="10:00 AM"
                     />
                   </div>
                 </div>
@@ -248,7 +241,7 @@ export default function BookingPage() {
               >
                 <div className="flex flex-col gap-4">
                   <div className="flex gap-8">
-                    {/* Start Date + Time */}
+                    {/* Start Date + Time Picker */}
                     <div>
                       <Calendar
                         mode="single"
@@ -267,7 +260,7 @@ export default function BookingPage() {
                       </div>
                     </div>
 
-                    {/* End Date + Time */}
+                    {/* End Date + Time Picker */}
                     <div>
                       <Calendar
                         mode="single"

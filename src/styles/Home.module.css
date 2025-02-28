@@ -45,3 +45,15 @@
   align-items: center;
   justify-content: space-between;
 }
+@media (max-width: 481px) {
+  .wrapper {
+    padding: 20px;
+  }
+  .row {
+    grid-template-columns: 100%;
+  }
+  .rightSide {
+    flex-flow: column;
+    gap: 10px;
+  }
+}
