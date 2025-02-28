@@ -47,10 +47,10 @@ export default function BookingPage() {
     }
     return (
       <div className="flex items-center w-full bg-[#f8f8f8]  px-4 py-2 text-black">
-        <MdCalendarMonth size={16} className="mr-1 text-gray-500" />
+        <MdCalendarMonth size={15} className="mr-1 text-gray-500" />
         <span className="text-[14px]">{format(date, "EEE (MM/dd)")}</span>
         <span className="mx-1 text-gray-500">|</span>
-        <MdAccessTime size={16} className="mr-1 text-gray-500" />
+        <MdAccessTime size={15} className="mr-1 text-gray-500" />
         <span className="text-[14px]">{time}</span>
       </div>
     );
