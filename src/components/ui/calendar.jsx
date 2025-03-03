@@ -1,22 +1,19 @@
-import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import * as React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DayPicker } from "react-day-picker";
 
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-function Calendar({
-  className,
-  classNames,
-  showOutsideDays = true,
-  ...props
-}) {
+function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
   return (
-    (<DayPicker
+    <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      style={{ width: "100%" }} // Ensure full width
+      className={cn("p-3 w-full", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        months:
+          "flex flex-col w-full sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
@@ -27,7 +24,8 @@ function Calendar({
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
+        // Use border-separate with custom border-spacing to create gaps between cells
+        table: "w-full border-separate [border-spacing:10px]",
         head_row: "flex",
         head_cell:
           "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
@@ -38,9 +36,10 @@ function Calendar({
             ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
             : "[&:has([aria-selected])]:rounded-md"
         ),
+        // Increase day size and center the content
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-8 w-8 p-0 font-normal aria-selected:opacity-100"
+          "h-12 w-12 p-0 font-normal flex items-center justify-center aria-selected:opacity-100"
         ),
         day_range_start: "day-range-start",
         day_range_end: "day-range-end",
@@ -63,9 +62,10 @@ function Calendar({
           <ChevronRight className={cn("h-4 w-4", className)} {...props} />
         ),
       }}
-      {...props} />)
+      {...props}
+    />
   );
 }
-Calendar.displayName = "Calendar"
+Calendar.displayName = "Calendar";
 
-export { Calendar }
+export { Calendar };
