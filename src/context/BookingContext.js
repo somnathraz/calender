@@ -1,7 +1,7 @@
 import React, { createContext, useState } from "react";
 import { startOfDay, addDays } from "date-fns";
 
-// Function to get the nearest valid 30-minute time slot
+// Function to get the nearest valid 30‑minute time slot
 function getNearestValidTime() {
   const now = new Date();
   const minutes = now.getMinutes();
@@ -15,22 +15,32 @@ function getNearestValidTime() {
   return `${h12}:${minStr} ${ampm}`;
 }
 
+// Define the available studios along with their pricing per hour.
+export const studiosList = [
+  { name: "THE GROUND", pricePerHour: 200 },
+  { name: "THE EXTENSION", pricePerHour: 250 },
+  { name: "THE LAB", pricePerHour: 150 },
+  { name: "BOTH THE LAB & THE EXTENSION FOR EVENTS", pricePerHour: 400 },
+  { name: "THE PODCAST ROOM", pricePerHour: 100 },
+];
+
 // Create the context
 export const BookingContext = createContext();
 
 // Provider component
 export function BookingProvider({ children }) {
-  // Shared states
-  const [studio, setStudio] = useState("BOTH STUDIOS");
+  // Selected studio is now stored as an object.
+  // Default to the first studio (or set to null if you prefer no default).
+  const [selectedStudio, setSelectedStudio] = useState(studiosList[0]);
   const [startDate, setStartDate] = useState(startOfDay(new Date()));
-  const [startTime, setStartTime] = useState(getNearestValidTime()); // Set nearest valid time
-  const [endDate, setEndDate] = useState(addDays(startOfDay(new Date()), 1)); // Set next day as endDate
+  const [startTime, setStartTime] = useState(getNearestValidTime());
+  const [endDate, setEndDate] = useState(addDays(startOfDay(new Date()), 1));
   const [endTime, setEndTime] = useState("10:00 AM");
 
   // Placeholder image URL
   const placeholderImage = "/addon.png";
 
-  // Example "cart items" or add-on items with images
+  // Example "cart items" or add‑on items with images.
   const [items, setItems] = useState([
     { id: 1, name: "Makeup", price: 20, quantity: 0, image: placeholderImage },
     { id: 2, name: "Steamer", price: 30, quantity: 0, image: placeholderImage },
@@ -51,7 +61,7 @@ export function BookingProvider({ children }) {
     },
   ]);
 
-  // Provide a function to update item quantity
+  // Provide a function to update item quantity.
   const updateItemQuantity = (itemId, delta) => {
     setItems((prev) =>
       prev.map((item) =>
@@ -65,8 +75,9 @@ export function BookingProvider({ children }) {
   return (
     <BookingContext.Provider
       value={{
-        studio,
-        setStudio,
+        studiosList,
+        selectedStudio,
+        setSelectedStudio,
         startDate,
         setStartDate,
         startTime,
