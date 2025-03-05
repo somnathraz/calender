@@ -164,10 +164,10 @@ export default function BookingPage() {
       endTime: !endTime,
     };
 
-    if (startDate && !isToday(startDate)) {
-      newErrors.startDate = true;
-      alert("Start date must be today.");
-    }
+    // if (startDate && !isToday(startDate)) {
+    //   newErrors.startDate = true;
+    //   alert("Start date must be today.");
+    // }
 
     if (startTime && timeStringToMinutes(startTime) >= 21 * 60) {
       newErrors.startTime = true;
