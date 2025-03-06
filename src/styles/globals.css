@@ -5,6 +5,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-inter: "Inter", sans-serif;
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -83,4 +84,10 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Apply Inter font globally */
+body {
+  font-family: var(--font-inter);
+  letter-spacing: -0.02em;
 }

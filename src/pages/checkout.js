@@ -2,13 +2,12 @@ import React, { useContext, useState } from "react";
 import { BookingContext } from "@/context/BookingContext";
 import styles from "@/styles/Checkout.module.css";
 import { FiBox } from "react-icons/fi";
-import {
-  MdCalendarMonth,
-  MdAccessTime,
-  MdLocationOn,
-  MdKeyboardArrowDown,
-} from "react-icons/md";
+import { MdCalendarMonth, MdAccessTime, MdLocationOn } from "react-icons/md";
+import { loadStripe } from "@stripe/stripe-js";
 
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+);
 function DateTimeDisplay({
   date,
   time,
@@ -36,6 +35,7 @@ export default function CheckoutPage() {
     endDate,
     endTime,
     items,
+    updateItemQuantity,
     selectedStudio,
   } = useContext(BookingContext);
   console.log(items);
@@ -72,33 +72,33 @@ export default function CheckoutPage() {
     setError("");
 
     // Prepare the booking data from context
-    const bookingData = {
-      studio,
-      startDate,
-      startTime,
-      endDate,
-      endTime,
-      items: items.filter((item) => item.quantity > 0),
-      subtotal,
-      studioCost,
-      surcharge,
-      estimatedTotal,
-    };
 
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingData),
+        body: JSON.stringify({
+          studio: selectedStudio.name,
+          startDate,
+          startTime,
+          endDate,
+          endTime,
+          items,
+          subtotal,
+          studioCost,
+          surcharge,
+          estimatedTotal,
+        }),
       });
+
       const data = await res.json();
       setLoading(false);
       if (!res.ok) {
         setError(data.message || "An error occurred during checkout");
       } else {
-        // Payment session created or order validated successfully.
-        // For example, redirect to payment gateway or show success message.
-        alert("Booking validated and saved! Proceed to payment.");
+        // Redirect user to Stripe Checkout
+        const stripe = await stripePromise;
+        await stripe.redirectToCheckout({ sessionId: data.sessionId });
       }
     } catch (err) {
       console.error(err);
@@ -154,7 +154,7 @@ export default function CheckoutPage() {
             .filter((item) => item.quantity > 0)
             .map((item) => (
               <div key={item.id} className="flex gap-2 py-2 items-center">
-                <p className="flex items-center gap-2 bg-[#f8f8f8] px-4 py-3 font-semibold text-sm w-full">
+                <p className="flex items-center gap-2 bg-[#f8f8f8] px-4 py-[15.4px] font-semibold text-sm w-full">
                   <FiBox /> {item.name}
                 </p>
               </div>
@@ -174,13 +174,30 @@ export default function CheckoutPage() {
                 key={item.id}
                 className="grid grid-cols-3 gap-20 items-center py-2"
               >
-                <p className="flex items-center justify-center gap-2 bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
-                  {item.quantity}
-                  <MdKeyboardArrowDown className="text-lg" />
-                </p>
+                {/* Quantity Control with + and - buttons */}
+                <div className="flex items-center justify-center bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
+                  <button
+                    onClick={() => updateItemQuantity(item.id, -1)}
+                    className="text-lg px-2 text-gray-600"
+                    disabled={item.quantity <= 1}
+                  >
+                    −
+                  </button>
+                  <span className="mx-3">{item.quantity}</span>
+                  <button
+                    onClick={() => updateItemQuantity(item.id, 1)}
+                    className="text-lg px-2 text-gray-600"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Price per hour */}
                 <p className="flex items-center gap-2 justify-center bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
                   ${item.price}/Hr
                 </p>
+
+                {/* Total Price for item */}
                 <p className="flex items-center gap-2 justify-center bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
                   ${item.quantity * item.price}
                 </p>

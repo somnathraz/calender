@@ -32,9 +32,12 @@ export function BookingProvider({ children }) {
   // Selected studio is now stored as an object.
   // Default to the first studio (or set to null if you prefer no default).
   const [selectedStudio, setSelectedStudio] = useState(studiosList[0]);
-  const [startDate, setStartDate] = useState(startOfDay(new Date()));
+  const today = startOfDay(new Date());
+  const defaultStartDate = today;
+  const defaultEndDate = addDays(today, 1); // Default to 2 days range
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endDate, setEndDate] = useState(defaultEndDate);
   const [startTime, setStartTime] = useState(getNearestValidTime());
-  const [endDate, setEndDate] = useState(addDays(startOfDay(new Date()), 1));
   const [endTime, setEndTime] = useState("10:00 AM");
 
   // Placeholder image URL

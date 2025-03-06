@@ -115,12 +115,10 @@ export default function BookingPage() {
           headers: { "Content-Type": "application/json" },
         });
         const data = await res.json();
-
         // Filter the bookings for the selected studio
         const filteredBookings = (data.bookings || []).filter(
           (booking) => booking.studio === studio
         );
-
         // Compute blocked times only for the filtered bookings
         const blockedByDate = computeBlockedTimesByDate(filteredBookings);
         setBlockedTimesByDate(blockedByDate);
@@ -138,22 +136,23 @@ export default function BookingPage() {
     blockedTimesByDate[startDateKey] || new Set();
   const blockedTimesForEndDate = blockedTimesByDate[endDateKey] || new Set();
 
-  function parseDateTime(date, timeStr) {
-    // Split time string
-    const [time, period] = timeStr.split(" ");
-    const [hourStr, minuteStr] = time.split(":");
-    let hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-    if (period === "PM" && hour !== 12) hour += 12;
-    if (period === "AM" && hour === 12) hour = 0;
-    return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      hour,
-      minute
-    );
-  }
+  // For the calendar, we want to show two months side by side.
+  // When selecting a range, we want the first click to set the start date and the second to set the end date.
+  // Modify the onSelect callback so that if the range object does not include a "to" date, we update only the start date.
+  const handleRangeSelect = (range) => {
+    if (!range) return;
+
+    if (!range.to) {
+      // If only one date is selected, set both start and end to that date
+      setStartDate(range.from);
+      setEndDate(range.from);
+    } else {
+      // If both dates are selected, set accordingly
+      setStartDate(range.from);
+      setEndDate(range.to);
+    }
+  };
+
   // Validate required fields and conditions.
   const handleNext = () => {
     const newErrors = {
@@ -164,40 +163,44 @@ export default function BookingPage() {
       endTime: !endTime,
     };
 
-    // if (startDate && !isToday(startDate)) {
-    //   newErrors.startDate = true;
-    //   alert("Start date must be today.");
-    // }
-
     if (startTime && timeStringToMinutes(startTime) >= 21 * 60) {
       newErrors.startTime = true;
       alert("Invalid start time. Must be before 9:00 PM.");
     }
-    // Parse full Date objects for start and end.
-    const startDateTime = parseDateTime(startDate, startTime);
-    const endDateTime = parseDateTime(endDate, endTime);
-
-    // Validation: end time must be after start time (considering the date as well)
+    const startDateTime = new Date(startDate);
+    const endDateTime = new Date(endDate);
+    // When comparing times across days, add the booking duration in days
+    // (Assuming that startDate and endDate are separate days)
     if (startTime !== "---:--" && endDateTime <= startDateTime) {
       newErrors.endTime = true;
       alert("End time must be after start time.");
     }
 
-    // Additional check: If the selected studio is "BOTH THE LAB & THE EXTENSION FOR EVENTS",
-    // enforce a minimum booking duration of 2 hours.
-    if (
-      selectedStudio &&
-      selectedStudio.name === "BOTH THE LAB & THE EXTENSION FOR EVENTS" &&
-      startTime !== "---:--" &&
-      endDateTime - startDateTime < 7200000
-    ) {
-      newErrors.endTime = true;
-      alert("Minimum booking time for events is 2 hours.");
-    }
+    // Additional check for minimum booking duration (1 hour)
+    if (startTime !== "---:--") {
+      // Create Date objects for start and end times using their respective dates.
+      const startDateTime = new Date(startDate);
+      const endDateTime = new Date(endDate);
 
-    if (startTime !== "---:--" && endDateTime - startDateTime < 3600000) {
-      newErrors.endTime = true;
-      alert("Minimum booking time is 1 hour.");
+      // Convert time strings to minutes since midnight
+      const startMinutes = timeStringToMinutes(startTime);
+      const endMinutes = timeStringToMinutes(endTime);
+
+      // Set the hours and minutes on the date objects accordingly.
+      startDateTime.setHours(
+        Math.floor(startMinutes / 60),
+        startMinutes % 60,
+        0,
+        0
+      );
+      endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
+
+      // Calculate the total difference in minutes
+      const diffInMinutes = (endDateTime - startDateTime) / 60000;
+      if (diffInMinutes < 60) {
+        newErrors.endTime = true;
+        alert("Minimum booking time is 1 hour.");
+      }
     }
 
     // New multi-day range check:
@@ -207,7 +210,6 @@ export default function BookingPage() {
       endDate,
       endTime
     );
-    // For each slot, check in the corresponding date's blocked set.
     let conflictFound = false;
     rangeSlots.forEach(({ date, time }) => {
       const blockedSet = blockedTimesByDate[date] || new Set();
@@ -348,28 +350,19 @@ export default function BookingPage() {
         </div>
       </div>
       {/* Calendar Section */}
-      <div className="mt-4 w-[70%] p-5 bg-[#f8f8f8]">
-        <div className="flex justify-between">
-          <div className="flex justify-center items-center">
-            <Calendar
-              mode="single"
-              selected={startDate}
-              onSelect={setStartDate}
-              disabled={{ before: today }}
-              initialFocus
-              className="w-full"
-            />
-          </div>
-          <div className="flex justify-center items-center">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={setEndDate}
-              disabled={{ before: today }}
-              className="w-full"
-            />
-          </div>
-        </div>
+      <div className="mt-4 w-[70%] flex items-center justify-center p-5 bg-[#f8f8f8]">
+        {/* Single Calendar for Range Selection: Shows 2 months at a time */}
+        {/* Use the Calendar in range mode to allow selection of start and end dates */}
+        <Calendar
+          mode="range"
+          inline
+          isClearable={true}
+          selected={{ from: startDate, to: endDate }}
+          disabled={{ before: new Date() }}
+          onSelect={(range) => handleRangeSelect(range)}
+          numberOfMonths={2}
+          className="w-full"
+        />
       </div>
     </div>
   );
