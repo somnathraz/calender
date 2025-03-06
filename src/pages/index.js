@@ -169,11 +169,32 @@ export default function BookingPage() {
     }
     const startDateTime = new Date(startDate);
     const endDateTime = new Date(endDate);
-    // When comparing times across days, add the booking duration in days
-    // (Assuming that startDate and endDate are separate days)
-    if (startTime !== "---:--" && endDateTime <= startDateTime) {
-      newErrors.endTime = true;
-      alert("End time must be after start time.");
+    const startDateTimeWithTime = new Date(startDate);
+    const endDateTimeWithTime = new Date(endDate);
+
+    if (startTime !== "---:--" && endTime !== "---:--") {
+      const startMinutes = timeStringToMinutes(startTime);
+      const endMinutes = timeStringToMinutes(endTime);
+
+      // Set the hours and minutes on the date objects
+      startDateTimeWithTime.setHours(
+        Math.floor(startMinutes / 60),
+        startMinutes % 60,
+        0,
+        0
+      );
+      endDateTimeWithTime.setHours(
+        Math.floor(endMinutes / 60),
+        endMinutes % 60,
+        0,
+        0
+      );
+
+      // Now compare the full datetime objects
+      if (endDateTimeWithTime <= startDateTimeWithTime) {
+        newErrors.endTime = true;
+        alert("End time must be after start time.");
+      }
     }
 
     // Additional check for minimum booking duration (1 hour)
@@ -342,7 +363,7 @@ export default function BookingPage() {
           </div>
           <Button
             variant="default"
-            className="mt-4 h-12 px-10"
+            className="mt-4 h-12 px-10 rounded-none"
             onClick={handleNext}
           >
             Next

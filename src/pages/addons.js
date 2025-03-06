@@ -48,7 +48,7 @@ export default function AddOnsPage() {
       <h2 className="text-2xl font-bold mb-4">Add-Ons / Cart</h2>
 
       {/* Booking Details */}
-      <div className="mb-6 p-4 bg-gray-100 rounded-md">
+      <div className="mb-6 p-4 bg-gray-100 ">
         <p className="text-lg font-semibold">
           Studio:{" "}
           {selectedStudio
@@ -76,12 +76,7 @@ export default function AddOnsPage() {
           <div key={item.id} className="flex flex-col gap-2">
             {/* Item Image */}
             <div className={styles.image}>
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                className="rounded-md mb-2"
-              />
+              <Image src={item.image} alt={item.name} fill className=" mb-2" />
             </div>
             {/* Item Name & Price */}
             <div className="flex justify-between">
@@ -91,7 +86,7 @@ export default function AddOnsPage() {
                 <p className="text-gray-600 font-bold">${item.price}/Hr</p>
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    className={`px-2 py-[2px] rounded-md ${
+                    className={`px-2 py-[2px]  ${
                       item.quantity === 0
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-gray-200 hover:bg-gray-300"
@@ -105,7 +100,7 @@ export default function AddOnsPage() {
                     {item.quantity}
                   </span>
                   <button
-                    className={`px-2 py-[2px] rounded-md ${
+                    className={`px-2 py-[2px]  ${
                       item.quantity >= maxAddonHours
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-black text-white hover:bg-gray-800"
@@ -133,7 +128,7 @@ export default function AddOnsPage() {
       {/* Navigation Buttons */}
       <div className="flex justify-center gap-8 mt-6">
         <button
-          className={`px-6 py-2 bg-gray-400 text-white rounded-md ${
+          className={`px-6 py-2 bg-gray-400 text-white ${
             items.some((item) => item.quantity > 0)
               ? "hover:bg-gray-800"
               : "cursor-not-allowed"
@@ -143,7 +138,7 @@ export default function AddOnsPage() {
           Back
         </button>
         <button
-          className={`px-6 py-2 bg-black text-white rounded-md ${
+          className={`px-6 py-2 bg-black text-white  ${
             items.some((item) => item.quantity > 0)
               ? "hover:bg-gray-800"
               : "bg-gray-400 cursor-not-allowed"

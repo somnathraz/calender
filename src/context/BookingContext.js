@@ -62,6 +62,57 @@ export function BookingProvider({ children }) {
       quantity: 0,
       image: placeholderImage,
     },
+    {
+      id: 6,
+      name: "Photography",
+      price: 350,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    {
+      id: 7,
+      name: "Videography",
+      price: 650,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    { id: 8, name: "Hair", price: 250, quantity: 0, image: placeholderImage },
+    { id: 9, name: "Makeup", price: 300, quantity: 0, image: placeholderImage },
+    {
+      id: 10,
+      name: "Models",
+      price: 400,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    {
+      id: 11,
+      name: "Wardrobe",
+      price: 500,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    {
+      id: 12,
+      name: "Assistant/BTS Reels",
+      price: 250,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    {
+      id: 13,
+      name: "Creative Direction",
+      price: 1500,
+      quantity: 0,
+      image: placeholderImage,
+    },
+    {
+      id: 14,
+      name: "Moodboards",
+      price: 500,
+      quantity: 0,
+      image: placeholderImage,
+    },
   ]);
 
   // Provide a function to update item quantity.

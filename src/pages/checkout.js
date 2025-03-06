@@ -17,7 +17,7 @@ function DateTimeDisplay({
   const displayDate = date ? date.toDateString() : fallbackDate;
   const displayTime = date ? time : fallbackTime;
   return (
-    <div className="flex items-center w-full bg-gray-100 px-4 text-black rounded-md">
+    <div className="flex items-center w-full bg-gray-100 px-4 text-black">
       <MdCalendarMonth size={16} className="mr-1 text-gray-500" />
       <span className="text-[15px]">{displayDate}</span>
       <span className="mx-1 text-gray-500">|</span>
@@ -114,7 +114,7 @@ export default function CheckoutPage() {
       </h2>
 
       {/* Studio Details Section */}
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+      <div className="bg-white p-6  shadow-sm mb-6">
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-1">
             <p className="text-gray-600 text-sm font-semibold">Studio Name</p>
@@ -233,7 +233,7 @@ export default function CheckoutPage() {
       <div className="flex justify-center">
         <button
           onClick={handleCheckout}
-          className="bg-black text-white px-6 py-3 rounded-md text-lg"
+          className="bg-black text-white px-6 py-3 text-lg"
           disabled={loading}
         >
           {loading ? "Processing..." : "Checkout"}
