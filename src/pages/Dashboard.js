@@ -205,22 +205,41 @@ export default function BookingDashboard() {
               // Build a dropdown for add-ons using a hover effect.
               const addOnsDropdown = (
                 <div className="relative group inline-block">
-                  <div className="cursor-pointer underline text-blue-600">
-                    View Services
-                  </div>
-                  <div className="absolute left-0 mt-1 hidden group-hover:block bg-white border rounded shadow-lg p-2 z-10 max-h-32 overflow-y-auto">
-                    {booking.items && booking.items.length > 0 ? (
-                      booking.items
-                        .filter((item) => item.quantity > 0)
-                        .map((item) => (
-                          <div key={item.id} className="py-1 text-sm">
-                            {item.name} ({item.quantity})
-                          </div>
-                        ))
+                  <TableCell>
+                    {booking.items &&
+                    booking.items.filter((item) => item.quantity > 0).length >
+                      0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {(() => {
+                          const displayedItems = booking.items.filter(
+                            (item) => item.quantity > 0
+                          );
+                          const maxDisplay = 3;
+                          return (
+                            <>
+                              {displayedItems
+                                .slice(0, maxDisplay)
+                                .map((item) => (
+                                  <span
+                                    key={item.id}
+                                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
+                                  >
+                                    {item.name} ({item.quantity})
+                                  </span>
+                                ))}
+                              {displayedItems.length > maxDisplay && (
+                                <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs">
+                                  +{displayedItems.length - maxDisplay} more
+                                </span>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     ) : (
-                      <div className="py-1 text-sm">None</div>
+                      "None"
                     )}
-                  </div>
+                  </TableCell>
                 </div>
               );
 

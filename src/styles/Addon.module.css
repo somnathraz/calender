@@ -15,4 +15,7 @@
     height: 200px;
     object-fit: cover;
   }
+  .addonGrid {
+    grid-template-columns: 49% 49%;
+  }
 }
