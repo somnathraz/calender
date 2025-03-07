@@ -46,15 +46,31 @@
   align-items: center;
   justify-content: space-between;
 }
+.CalendarWrap {
+  width: 70%;
+  background-color: #f8f8f8;
+  display: flex; /* Ensure flex behavior */
+  flex-direction: column; /* Stack content */
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically */
+  padding: 20px;
+}
 @media (max-width: 481px) {
   .wrapper {
     padding: 20px;
   }
   .row {
+    width: 100%;
+    justify-content: flex-start;
+    align-items: flex-start;
     grid-template-columns: 100%;
   }
   .rightSide {
     flex-flow: column;
+    align-items: flex-start;
     gap: 10px;
+  }
+  .CalendarWrap {
+    width: 100%;
   }
 }

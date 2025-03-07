@@ -19,11 +19,12 @@ export default async function handler(req, res) {
 
     console.log(`🔍 Verifying Stripe session: ${session_id}`);
 
-    // Fetch Stripe session details
+    // Retrieve Stripe session details
     const session = await stripe.checkout.sessions.retrieve(session_id);
     console.log("✅ Stripe Session Retrieved:", session);
 
     if (session.payment_status !== "paid") {
+      // Payment is not complete, so the booking remains pending
       return res.status(400).json({ message: "Payment not completed" });
     }
 
@@ -35,10 +36,10 @@ export default async function handler(req, res) {
         .json({ message: "Booking ID missing from session metadata" });
     }
 
-    // Update booking status in database
+    // Update the booking status to "success" after successful payment
     const updatedBooking = await Booking.findByIdAndUpdate(
       bookingId,
-      { paymentStatus: "paid" },
+      { paymentStatus: "success" },
       { new: true }
     );
 
@@ -46,11 +47,12 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    console.log(`✅ Booking ${bookingId} marked as paid`);
+    console.log(`✅ Booking ${bookingId} marked as success`);
 
-    res
-      .status(200)
-      .json({ message: "Payment verified", booking: updatedBooking });
+    res.status(200).json({
+      message: "Payment verified and booking updated",
+      booking: updatedBooking,
+    });
   } catch (error) {
     console.error("❌ Error verifying payment:", error);
     res

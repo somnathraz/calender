@@ -8,6 +8,7 @@ import { loadStripe } from "@stripe/stripe-js";
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 );
+
 function DateTimeDisplay({
   date,
   time,
@@ -38,16 +39,12 @@ export default function CheckoutPage() {
     updateItemQuantity,
     selectedStudio,
   } = useContext(BookingContext);
-  console.log(items);
 
-  // Calculate addons subtotal
+  // Calculate totals
   const subtotal = items.reduce(
     (acc, item) => acc + item.quantity * item.price,
     0
   );
-
-  // Calculate the studio hours and cost if a studio is selected.
-  // This assumes startDate and endDate are valid Date objects.
   const studioHours =
     selectedStudio && startDate && endDate
       ? (endDate - startDate) / (1000 * 60 * 60)
@@ -56,23 +53,31 @@ export default function CheckoutPage() {
     selectedStudio && studioHours > 0
       ? studioHours * selectedStudio.pricePerHour
       : 0;
-
-  const surcharge = 400; // Example surcharge amount
-
-  // Update the estimated total to include studio cost.
+  const surcharge = 400;
   const estimatedTotal = subtotal + studioCost + surcharge;
 
-  // Local state for loading and error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Function to handle checkout API call
-  const handleCheckout = async () => {
+  // State for modal popup and customer details
+  const [showModal, setShowModal] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [formError, setFormError] = useState("");
+
+  // New checkout function that includes customer info
+  const handleCheckoutWithCustomerInfo = async () => {
+    // Basic validation: ensure all fields are filled
+    if (!customerName || !customerEmail || !customerPhone) {
+      setFormError("All fields are required.");
+      return;
+    }
+
     setLoading(true);
     setError("");
-
-    // Prepare the booking data from context
-
+    setFormError("");
+    const localTimestamp = new Date().toISOString();
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -88,6 +93,11 @@ export default function CheckoutPage() {
           studioCost,
           surcharge,
           estimatedTotal,
+          // Add new customer fields
+          customerName,
+          customerEmail,
+          customerPhone,
+          timestamp: localTimestamp, // Send today's date with local timestamp
         }),
       });
 
@@ -96,7 +106,6 @@ export default function CheckoutPage() {
       if (!res.ok) {
         setError(data.message || "An error occurred during checkout");
       } else {
-        // Redirect user to Stripe Checkout
         const stripe = await stripePromise;
         await stripe.redirectToCheckout({ sessionId: data.sessionId });
       }
@@ -107,19 +116,30 @@ export default function CheckoutPage() {
     }
   };
 
+  // When Checkout is clicked, open the modal
+  const openModal = () => {
+    setShowModal(true);
+  };
+
+  // Close the modal
+  const closeModal = () => {
+    setShowModal(false);
+    setFormError("");
+  };
+
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-gray-100 min-h-screen">
       <h2 className="text-2xl font-bold text-center mb-6">
         Your Appointment Details
       </h2>
 
       {/* Studio Details Section */}
-      <div className="bg-white p-6  shadow-sm mb-6">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="bg-white p-6 shadow-sm mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="flex flex-col gap-1">
             <p className="text-gray-600 text-sm font-semibold">Studio Name</p>
             <div className="p-3 flex items-center gap-1 text-[14px] bg-gray-100">
-              <MdLocationOn className="mr-1" />{" "}
+              <MdLocationOn className="mr-1" />
               {selectedStudio
                 ? `${
                     selectedStudio.name
@@ -146,7 +166,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Your Addons Section */}
+      {/* Addons Section */}
       <div className={styles.addonCard}>
         <div>
           <h3 className="text-lg font-bold mb-4">Your Addons</h3>
@@ -162,19 +182,20 @@ export default function CheckoutPage() {
         </div>
 
         <div>
-          <div className="grid grid-cols-3 gap-20 font-semibold text-gray-600 mb-4">
+          <div className="grid grid-cols-3 gap-4 font-semibold text-gray-600 mb-4">
             <p className="text-center">Total Hours</p>
             <p className="text-center">Price/Hr</p>
             <p className="text-center">Total Price</p>
           </div>
+
           {items
             .filter((item) => item.quantity > 0)
             .map((item) => (
               <div
                 key={item.id}
-                className="grid grid-cols-3 gap-20 items-center py-2"
+                className="grid grid-cols-3 sm:gap-4 gap-20 items-center py-2"
               >
-                {/* Quantity Control with + and - buttons */}
+                {/* Quantity Control */}
                 <div className="flex items-center justify-center bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
                   <button
                     onClick={() => updateItemQuantity(item.id, -1)}
@@ -207,22 +228,25 @@ export default function CheckoutPage() {
       </div>
 
       {/* Price Summary Section */}
-      <div className={styles.totalCard}>
-        <div className="flex justify-between text-lg mb-2">
-          <p>Subtotal (Addons)</p>
-          <p>${subtotal.toFixed(2)}</p>
-        </div>
-        <div className="flex justify-between text-lg mb-2">
-          <p>Studio Price</p>
-          <p>${studioCost.toFixed(2)}</p>
-        </div>
-        <div className="flex justify-between text-lg mb-2">
-          <p>Surcharge (Details)</p>
-          <p>${surcharge.toFixed(2)}</p>
-        </div>
-        <div className="flex justify-between text-xl font-bold mt-2">
-          <p>Estimated Total</p>
-          <p className="text-black">${estimatedTotal.toFixed(2)}</p>
+      <div className="bg-white p-6 shadow-sm mb-6">
+        <h3 className="text-lg font-bold mb-4">Price Summary</h3>
+        <div className="flex flex-col gap-2 text-lg">
+          <div className="flex justify-between">
+            <p>Subtotal (Addons)</p>
+            <p>${subtotal.toFixed(2)}</p>
+          </div>
+          <div className="flex justify-between">
+            <p>Studio Price</p>
+            <p>${studioCost.toFixed(2)}</p>
+          </div>
+          <div className="flex justify-between">
+            <p>Surcharge</p>
+            <p>${surcharge.toFixed(2)}</p>
+          </div>
+          <div className="flex justify-between font-bold text-xl mt-2">
+            <p>Estimated Total</p>
+            <p className="text-black">${estimatedTotal.toFixed(2)}</p>
+          </div>
         </div>
       </div>
 
@@ -232,13 +256,84 @@ export default function CheckoutPage() {
       {/* Checkout Button */}
       <div className="flex justify-center">
         <button
-          onClick={handleCheckout}
-          className="bg-black text-white px-6 py-3 text-lg"
+          onClick={openModal}
+          className="bg-black text-white px-6 py-3 text-lg w-full sm:w-auto"
           disabled={loading}
         >
           {loading ? "Processing..." : "Checkout"}
         </button>
       </div>
+
+      {/* Modal Popup */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black opacity-50"
+            onClick={closeModal}
+          ></div>
+          {/* Modal content */}
+          <div className="relative bg-white p-6 shadow-lg z-10 w-11/12 max-w-md">
+            <h3 className="text-xl font-bold mb-4">Enter Your Details</h3>
+            {formError && (
+              <p className="text-red-500 text-center mb-2">{formError}</p>
+            )}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleCheckoutWithCustomerInfo();
+              }}
+            >
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Name</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full border px-3 py-2"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  className="w-full border px-3 py-2 "
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="w-full border px-3 py-2"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-black text-white"
+                  disabled={loading}
+                >
+                  {loading ? "Processing..." : "Submit"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

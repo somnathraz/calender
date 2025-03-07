@@ -3,7 +3,7 @@ import Booking from "@/models/Booking";
 
 export default async function handler(req, res) {
   await dbConnect();
-  // console.log("geting get call");
+  console.log("geting get call");
   if (req.method === "POST") {
     try {
       // Extract data from request body (you should validate these fields)

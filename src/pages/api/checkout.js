@@ -26,11 +26,16 @@ export default async function handler(req, res) {
       studioCost,
       surcharge,
       estimatedTotal: clientTotal,
+      // New customer fields
+      customerName,
+      customerEmail,
+      customerPhone,
+      timestamp, // local timestamp sent from frontend
     } = req.body;
 
-    console.log(clientStudio, "studio name");
+    console.log(customerName, customerEmail, customerPhone, "studio name");
 
-    // 1️⃣ **Validate Product Catalog**
+    // 1️⃣ Validate Product Catalog
     const productDoc = await Product.findOne().lean();
     if (!productDoc) {
       console.error("❌ Product catalog not found.");
@@ -38,7 +43,7 @@ export default async function handler(req, res) {
     }
     console.log("✅ Product catalog found.");
 
-    // 2️⃣ **Validate Studio Selection**
+    // 2️⃣ Validate Studio Selection
     const validStudio = productDoc.studios.find(
       (s) => s.name.toLowerCase() === clientStudio.toLowerCase()
     );
@@ -50,7 +55,7 @@ export default async function handler(req, res) {
     }
     console.log("✅ Studio validation passed.");
 
-    // 3️⃣ **Validate Add-ons**
+    // 3️⃣ Validate Add-ons
     const priceMap = {};
     productDoc.services.forEach((service) => {
       priceMap[String(service.id)] = service.pricePerHour;
@@ -78,7 +83,7 @@ export default async function handler(req, res) {
     }
     console.log("✅ Subtotal validation passed.");
 
-    // 4️⃣ **Validate Total Calculation**
+    // 4️⃣ Validate Total Calculation
     const recalculatedTotal = recalculatedSubtotal + studioCost + surcharge;
     if (Number(clientTotal) !== recalculatedTotal) {
       console.error(
@@ -88,7 +93,8 @@ export default async function handler(req, res) {
     }
     console.log("✅ Total calculation passed.");
 
-    // 5️⃣ **Create Booking in Database**
+    // 5️⃣ Create Booking in MongoDB with paymentStatus "pending"
+    // (This document will be updated later after payment succeeds.)
     const booking = new Booking({
       studio: clientStudio,
       startDate,
@@ -101,14 +107,25 @@ export default async function handler(req, res) {
       surcharge,
       estimatedTotal: recalculatedTotal,
       paymentStatus: "pending",
+      customerName,
+      customerEmail,
+      customerPhone,
+      createdAt: timestamp || new Date(),
     });
 
     await booking.save();
     console.log("✅ Booking saved in database with ID:", booking._id);
 
-    // 6️⃣ **Create Stripe Checkout Session**
+    // 6️⃣ Create a Stripe Customer to prefill email, phone, and name
+    const stripeCustomer = await stripe.customers.create({
+      email: customerEmail,
+      phone: customerPhone,
+      name: customerName,
+    });
+
+    // 7️⃣ Build valid line items for the Stripe Checkout Session
     const validLineItems = clientItems
-      .filter((item) => item.quantity > 0) // ✅ Remove items with quantity 0
+      .filter((item) => item.quantity > 0)
       .map((item) => ({
         price_data: {
           currency: "usd",
@@ -131,12 +148,12 @@ export default async function handler(req, res) {
 
     console.log("📦 Stripe Line Items:", validLineItems);
 
-    // Ensure there are valid line items
     if (validLineItems.length === 0) {
       console.error("❌ Error: No valid items in checkout session.");
       return res.status(400).json({ message: "No valid items to checkout" });
     }
 
+    // 8️⃣ Create Stripe Checkout Session and pass bookingId in metadata
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       phone_number_collection: {
@@ -145,8 +162,12 @@ export default async function handler(req, res) {
       mode: "payment",
       success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel`,
+      // customer: stripeCustomer.id,
+      customer_email: customerEmail,
       line_items: validLineItems,
-      metadata: { bookingId: booking._id.toString() },
+      metadata: {
+        bookingId: booking._id.toString(), // Pass the MongoDB booking ID
+      },
     });
 
     console.log("✅ Stripe Checkout Session Created:", session.id);

@@ -45,10 +45,10 @@ export default function AddOnsPage() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Add-Ons / Cart</h2>
+      {/* <h2 className="text-2xl font-bold mb-4">Add-Ons / Cart</h2> */}
 
       {/* Booking Details */}
-      <div className="mb-6 p-4 bg-gray-100 ">
+      {/* <div className="mb-6 p-4 bg-gray-100 ">
         <p className="text-lg font-semibold">
           Studio:{" "}
           {selectedStudio
@@ -68,25 +68,27 @@ export default function AddOnsPage() {
             Maximum add-on hours allowed per item: {maxAddonHours}
           </p>
         )}
-      </div>
+      </div> */}
 
       {/* Add-On Items */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={styles.addonGrid}>
         {items.map((item) => (
-          <div key={item.id} className="flex flex-col gap-2">
+          <div key={item.id} className="flex flex-col gap-2 mb-3 ">
             {/* Item Image */}
             <div className={styles.image}>
               <Image src={item.image} alt={item.name} fill className=" mb-2" />
             </div>
             {/* Item Name & Price */}
-            <div className="flex justify-between">
-              <p className="text-lg font-semibold w-[50%]">{item.name}</p>
+            <div className="flex justify-between flex-wrap px-2">
+              <p className="font-semibold text-sm w-[50%]">{item.name}</p>
               {/* Quantity Controls */}
-              <div className="flex gap-2 items-center">
-                <p className="text-gray-600 font-bold">${item.price}/Hr</p>
+              <div className="flex gap-2 items-center ">
+                <p className="text-gray-600 font-bold text-sm">
+                  ${item.price}/Hr
+                </p>
                 <div className="flex items-center justify-center gap-1">
                   <button
-                    className={`px-2 py-[2px]  ${
+                    className={`w-6 h-6 flex items-center justify-center text-sm ${
                       item.quantity === 0
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-gray-200 hover:bg-gray-300"
@@ -96,11 +98,11 @@ export default function AddOnsPage() {
                   >
                     −
                   </button>
-                  <span className="px-4 text-lg font-semibold">
+                  <span className="px-4 text-lg font-semibold text-sm">
                     {item.quantity}
                   </span>
                   <button
-                    className={`px-2 py-[2px]  ${
+                    className={`w-6 h-6 flex items-center justify-center text-sm ${
                       item.quantity >= maxAddonHours
                         ? "bg-gray-300 cursor-not-allowed"
                         : "bg-black text-white hover:bg-gray-800"

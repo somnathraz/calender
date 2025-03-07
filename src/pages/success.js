@@ -34,6 +34,16 @@ export default function SuccessPage() {
     verifyPayment();
   }, [session_id]);
 
+  // Redirect to home page after 4 seconds if payment is successful
+  useEffect(() => {
+    if (status === "success") {
+      const timer = setTimeout(() => {
+        router.push("/");
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, router]);
+
   if (loading) {
     return (
       <p className="text-center text-lg font-semibold">Verifying payment...</p>
@@ -48,6 +58,7 @@ export default function SuccessPage() {
             Payment Successful 🎉
           </h1>
           <p>Your booking has been confirmed. Check your email for details.</p>
+          <p>You will be redirected to the home page shortly...</p>
         </div>
       ) : (
         <div className="bg-red-100 p-6 rounded-lg text-center">

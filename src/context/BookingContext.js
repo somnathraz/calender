@@ -18,9 +18,9 @@ function getNearestValidTime() {
 // Define the available studios along with their pricing per hour.
 export const studiosList = [
   { name: "THE GROUND", pricePerHour: 200 },
-  { name: "THE EXTENSION", pricePerHour: 250 },
+  { name: "THE EXTENSION", pricePerHour: 150 },
   { name: "THE LAB", pricePerHour: 150 },
-  { name: "BOTH THE LAB & THE EXTENSION FOR EVENTS", pricePerHour: 400 },
+  { name: "BOTH THE LAB & THE EXTENSION FOR EVENTS", pricePerHour: 300 },
   { name: "THE PODCAST ROOM", pricePerHour: 100 },
 ];
 
@@ -45,73 +45,76 @@ export function BookingProvider({ children }) {
 
   // Example "cart items" or add‑on items with images.
   const [items, setItems] = useState([
-    { id: 1, name: "Makeup", price: 20, quantity: 0, image: placeholderImage },
-    { id: 2, name: "Steamer", price: 30, quantity: 0, image: placeholderImage },
-    { id: 3, name: "Tables", price: 25, quantity: 0, image: placeholderImage },
     {
-      id: 4,
-      name: "Organic Stairs",
-      price: 40,
+      id: 1,
+      name: "Makeup",
+      price: 20,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/makeup.avif",
     },
-    {
-      id: 5,
-      name: "LED Lights + (2) Soft Boxes",
-      price: 50,
-      quantity: 0,
-      image: placeholderImage,
-    },
+
     {
       id: 6,
       name: "Photography",
       price: 350,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/photography.avif",
     },
     {
       id: 7,
       name: "Videography",
       price: 650,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/videography.jpg",
     },
-    { id: 8, name: "Hair", price: 250, quantity: 0, image: placeholderImage },
-    { id: 9, name: "Makeup", price: 300, quantity: 0, image: placeholderImage },
+    {
+      id: 8,
+      name: "Hair",
+      price: 250,
+      quantity: 0,
+      image: "/service/hair.webp",
+    },
+    {
+      id: 9,
+      name: "Makeup",
+      price: 300,
+      quantity: 0,
+      image: "/service/makeup.avif",
+    },
     {
       id: 10,
       name: "Models",
       price: 400,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/models.avif",
     },
     {
       id: 11,
       name: "Wardrobe",
       price: 500,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/wardrobe.avif",
     },
     {
       id: 12,
       name: "Assistant/BTS Reels",
       price: 250,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/btsreels.jpg",
     },
     {
       id: 13,
       name: "Creative Direction",
       price: 1500,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/creativedirection.avif",
     },
     {
       id: 14,
       name: "Moodboards",
       price: 500,
       quantity: 0,
-      image: placeholderImage,
+      image: "/service/moodboards.jpg",
     },
   ]);
 

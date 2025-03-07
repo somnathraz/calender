@@ -104,20 +104,39 @@ export default function BookingPage() {
     }
   }, [startDate, today, setStartDate, setStartTime]);
 
+  const [monthsToShow, setMonthsToShow] = useState(2);
+
+  // Detect screen size and adjust `numberOfMonths`
+  useEffect(() => {
+    const updateMonthsToShow = () => {
+      if (window.innerWidth < 768) {
+        // Mobile screens: Show 1 month below the other
+        setMonthsToShow(1);
+      } else {
+        // Desktop screens: Show 2 months side by side
+        setMonthsToShow(2);
+      }
+    };
+
+    updateMonthsToShow(); // Initial check
+    window.addEventListener("resize", updateMonthsToShow);
+    return () => window.removeEventListener("resize", updateMonthsToShow);
+  }, []);
+
   // Fetch existing bookings for the selected studio and date.
   useEffect(() => {
     async function fetchBookings() {
-      if (!studio || !startDate) return;
+      if (!selectedStudio || !startDate) return;
       const formattedDate = format(startDate, "yyyy-MM-dd");
       try {
-        const res = await fetch(`/api/booking?date=${formattedDate}`, {
+        const res = await fetch(`/api/booking`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
         const data = await res.json();
         // Filter the bookings for the selected studio
         const filteredBookings = (data.bookings || []).filter(
-          (booking) => booking.studio === studio
+          (booking) => booking.studio === selectedStudio.name
         );
         // Compute blocked times only for the filtered bookings
         const blockedByDate = computeBlockedTimesByDate(filteredBookings);
@@ -127,7 +146,8 @@ export default function BookingPage() {
       }
     }
     fetchBookings();
-  }, [studio, startDate]);
+    console.log("Fetching bookings for studio:", selectedStudio);
+  }, [selectedStudio, startDate]);
 
   // For TimeSlider components, pick the blocked set for the selected day.
   const startDateKey = startDate ? format(startDate, "yyyy-MM-dd") : "";
@@ -371,19 +391,20 @@ export default function BookingPage() {
         </div>
       </div>
       {/* Calendar Section */}
-      <div className="mt-4 w-[70%] flex items-center justify-center p-5 bg-[#f8f8f8]">
-        {/* Single Calendar for Range Selection: Shows 2 months at a time */}
-        {/* Use the Calendar in range mode to allow selection of start and end dates */}
-        <Calendar
-          mode="range"
-          inline
-          isClearable={true}
-          selected={{ from: startDate, to: endDate }}
-          disabled={{ before: new Date() }}
-          onSelect={(range) => handleRangeSelect(range)}
-          numberOfMonths={2}
-          className="w-full"
-        />
+      <div className="mt-4 w-auto sm:w-full flex justify-center items-center  ">
+        <div className={styles.CalendarWrap}>
+          {/* Calendar Component */}
+          <Calendar
+            mode="range"
+            inline
+            isClearable={true}
+            selected={{ from: startDate, to: endDate }}
+            disabled={{ before: new Date() }}
+            onSelect={(range) => handleRangeSelect(range)}
+            numberOfMonths={monthsToShow} // Dynamically set based on screen width
+            // className="w-auto sm:w-full max-w-lg mx-auto" // Ensures width changes based on screen size
+          />
+        </div>
       </div>
     </div>
   );

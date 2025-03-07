@@ -32,12 +32,11 @@ export default function BookingDashboard() {
           throw new Error(`HTTP error! Status: ${res.status}`);
         }
         const data = await res.json();
-        console.log("✅ Fetched bookings:", data); // Debugging log
+        console.log("✅ Fetched bookings:", data);
         if (data && Array.isArray(data.bookings)) {
           setBookings(data.bookings);
           setFilteredBookings(data.bookings);
         } else {
-          // Handle unexpected response structure
           setBookings([]);
           setFilteredBookings([]);
         }
@@ -66,7 +65,6 @@ export default function BookingDashboard() {
     setFilteredBookings(filtered);
   };
 
-  // New function to clear filters
   const clearFilters = () => {
     setMonthFilter("");
     setYearFilter("");
@@ -88,8 +86,10 @@ export default function BookingDashboard() {
     // Create an export header row
     const exportHeader = `Exported On: ${exportDate}\n\n`;
 
+    // Extend headers to include new customer fields and booking time
     const headers =
-      "Studio,Start Date,Start Time,End Date,End Time,Subtotal,Surcharge,Total,Add-ons,Total Hours\n";
+      "Booking Time,Customer Name,Customer Phone,Customer Email,Studio,Start Date,Start Time,End Date,End Time,Subtotal,Surcharge,Total,Add‑ons,Total Hours\n";
+
     const csvRows = filteredBookings.map((b) => {
       // Build add-ons string from items array
       const addOns =
@@ -100,7 +100,7 @@ export default function BookingDashboard() {
               .join("; ")
           : "None";
 
-      // Compute total hours (using date-fns parse)
+      // Compute total hours using date-fns parse
       let totalHours = "N/A";
       try {
         const startDateTime = parse(
@@ -120,19 +120,22 @@ export default function BookingDashboard() {
         console.error("Error calculating total hours", e);
       }
 
-      return `${b.studio},${format(new Date(b.startDate), "yyyy-MM-dd")},${
-        b.startTime
-      },${format(new Date(b.endDate), "yyyy-MM-dd")},${b.endTime},${
-        b.subtotal
-      },${b.surcharge},${b.estimatedTotal},${addOns},${totalHours}`;
+      return `${format(new Date(b.createdAt), "yyyy-MM-dd HH:mm:ss")},${
+        b.customerName
+      },${b.customerPhone},${b.customerEmail},${b.studio},${format(
+        new Date(b.startDate),
+        "yyyy-MM-dd"
+      )},${b.startTime},${format(new Date(b.endDate), "yyyy-MM-dd")},${
+        b.endTime
+      },${b.subtotal},${b.surcharge},${
+        b.estimatedTotal
+      },${addOns},${totalHours}`;
     });
 
-    // Prepend the export header to your CSV data
     const csvData = exportHeader + headers + csvRows.join("\n");
     console.log("📂 CSV Data:\n", csvData);
 
     const blob = new Blob([csvData], { type: "text/csv" });
-    // Include the date (without time) in the filename as well
     const fileName = `bookings-${exportDate}.csv`;
     saveAs(blob, fileName);
   };
@@ -140,7 +143,7 @@ export default function BookingDashboard() {
   return (
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">Bookings Dashboard</h2>
-      <div className="flex gap-4 mb-4">
+      <div className="flex flex-wrap gap-4 mb-4">
         <Select onValueChange={(value) => setMonthFilter(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by Month" />
@@ -173,6 +176,11 @@ export default function BookingDashboard() {
       <Table>
         <TableHeader>
           <TableRow>
+            {/* New columns for booking time and customer details */}
+            <TableHead>Booking Time</TableHead>
+            <TableHead>Customer Name</TableHead>
+            <TableHead>Customer Phone</TableHead>
+            <TableHead>Customer Email</TableHead>
             <TableHead>Studio</TableHead>
             <TableHead>Start Date</TableHead>
             <TableHead>Start Time</TableHead>
@@ -188,20 +196,33 @@ export default function BookingDashboard() {
         <TableBody>
           {filteredBookings.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="text-center text-gray-500">
+              <TableCell colSpan={14} className="text-center text-gray-500">
                 No bookings found.
               </TableCell>
             </TableRow>
           ) : (
             filteredBookings.map((booking) => {
-              // Build add-ons string from items array
-              const addOns =
-                booking.items && booking.items.length > 0
-                  ? booking.items
-                      .filter((item) => item.quantity > 0)
-                      .map((item) => `${item.name} (${item.quantity})`)
-                      .join("; ")
-                  : "None";
+              // Build a dropdown for add-ons using a hover effect.
+              const addOnsDropdown = (
+                <div className="relative group inline-block">
+                  <div className="cursor-pointer underline text-blue-600">
+                    View Services
+                  </div>
+                  <div className="absolute left-0 mt-1 hidden group-hover:block bg-white border rounded shadow-lg p-2 z-10 max-h-32 overflow-y-auto">
+                    {booking.items && booking.items.length > 0 ? (
+                      booking.items
+                        .filter((item) => item.quantity > 0)
+                        .map((item) => (
+                          <div key={item.id} className="py-1 text-sm">
+                            {item.name} ({item.quantity})
+                          </div>
+                        ))
+                    ) : (
+                      <div className="py-1 text-sm">None</div>
+                    )}
+                  </div>
+                </div>
+              );
 
               // Compute total hours
               let totalHours = "N/A";
@@ -230,6 +251,12 @@ export default function BookingDashboard() {
 
               return (
                 <TableRow key={booking._id}>
+                  <TableCell>
+                    {format(new Date(booking.createdAt), "yyyy-MM-dd HH:mm:ss")}
+                  </TableCell>
+                  <TableCell>{booking.customerName}</TableCell>
+                  <TableCell>{booking.customerPhone}</TableCell>
+                  <TableCell>{booking.customerEmail}</TableCell>
                   <TableCell>{booking.studio}</TableCell>
                   <TableCell>
                     {format(new Date(booking.startDate), "yyyy-MM-dd")}
@@ -242,7 +269,7 @@ export default function BookingDashboard() {
                   <TableCell>${booking.subtotal}</TableCell>
                   <TableCell>${booking.surcharge}</TableCell>
                   <TableCell>${booking.estimatedTotal}</TableCell>
-                  <TableCell>{addOns}</TableCell>
+                  <TableCell>{addOnsDropdown}</TableCell>
                   <TableCell>{totalHours} hours</TableCell>
                 </TableRow>
               );

@@ -1,4 +1,3 @@
-// models/Booking.js
 import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema({
@@ -31,9 +30,38 @@ const BookingSchema = new mongoose.Schema({
       image: String,
     },
   ],
-  subtotal: Number,
-  surcharge: Number,
-  estimatedTotal: Number,
+  subtotal: {
+    type: Number,
+    required: true,
+  },
+  studioCost: {
+    type: Number,
+    required: true,
+  },
+  surcharge: {
+    type: Number,
+    required: true,
+  },
+  estimatedTotal: {
+    type: Number,
+    required: true,
+  },
+  paymentStatus: {
+    type: String,
+    default: "pending", // "pending" until payment is verified
+  },
+  customerName: {
+    type: String,
+    required: true,
+  },
+  customerEmail: {
+    type: String,
+    required: true,
+  },
+  customerPhone: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
