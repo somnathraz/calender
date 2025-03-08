@@ -36,8 +36,12 @@ export default function BookingDashboard() {
         const data = await res.json();
         console.log("✅ Fetched bookings:", data);
         if (data && Array.isArray(data.bookings)) {
-          setBookings(data.bookings);
-          setFilteredBookings(data.bookings);
+          // Sort bookings in descending order by startDate
+          const sortedBookings = data.bookings.sort(
+            (a, b) => new Date(b.startDate) - new Date(a.startDate)
+          );
+          setBookings(sortedBookings);
+          setFilteredBookings(sortedBookings);
         } else {
           setBookings([]);
           setFilteredBookings([]);
@@ -155,7 +159,8 @@ export default function BookingDashboard() {
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">Bookings Dashboard</h2>
       {/* Inline filter & sort controls */}
-      <div className="flex items-center gap-4 mb-4 flex-nowrap">
+      {/* Desktop view (md and up): one row */}
+      <div className="hidden md:flex items-center gap-4 mb-4 flex-nowrap">
         <Select onValueChange={(value) => setMonthFilter(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by Month" />
@@ -196,85 +201,133 @@ export default function BookingDashboard() {
         <Button onClick={exportCSV}>Export CSV</Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Booking Time</TableHead>
-            <TableHead>Customer Name</TableHead>
-            <TableHead>Customer Phone</TableHead>
-            <TableHead>Customer Email</TableHead>
-            <TableHead>Studio</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Start Time</TableHead>
-            <TableHead>End Time</TableHead>
-            <TableHead>Subtotal</TableHead>
-            <TableHead>Surcharge</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Add‑ons</TableHead>
-            <TableHead>Total Hours</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredBookings.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={13} className="text-center text-gray-500">
-                No bookings found.
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredBookings.map((booking) => {
-              // Compute total hours (using startDate for both start and end time)
-              let totalHours = "N/A";
-              try {
-                const startDateTime = parse(
-                  `${format(new Date(booking.startDate), "yyyy-MM-dd")} ${
-                    booking.startTime
-                  }`,
-                  "yyyy-MM-dd h:mm a",
-                  new Date()
-                );
-                const endDateTime = parse(
-                  `${format(new Date(booking.startDate), "yyyy-MM-dd")} ${
-                    booking.endTime
-                  }`,
-                  "yyyy-MM-dd h:mm a",
-                  new Date()
-                );
-                totalHours = (
-                  (endDateTime - startDateTime) /
-                  (1000 * 60 * 60)
-                ).toFixed(1);
-              } catch (e) {
-                console.error("Error calculating total hours", e);
-              }
+      {/* Mobile view (below md): two rows of 3 items each */}
+      <div className="md:hidden grid grid-cols-3 gap-4 mb-4">
+        <Select onValueChange={(value) => setMonthFilter(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {[...Array(12)].map((_, i) => (
+              <SelectItem key={i} value={String(i + 1).padStart(2, "0")}>
+                {format(new Date(2025, i, 1), "MMM")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={(value) => setYearFilter(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {[2024, 2025, 2026].map((year) => (
+              <SelectItem key={year} value={String(year)}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select onValueChange={(value) => setSortOption(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-asc">Date ↑</SelectItem>
+            <SelectItem value="date-desc">Date ↓</SelectItem>
+            <SelectItem value="studio-asc">Studio A-Z</SelectItem>
+            <SelectItem value="studio-desc">Studio Z-A</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button onClick={handleFilter}>Apply</Button>
+        <Button onClick={clearFilters}>Clear</Button>
+        <Button onClick={exportCSV}>Export</Button>
+      </div>
 
-              return (
-                <TableRow key={booking._id}>
-                  <TableCell>
-                    {format(new Date(booking.createdAt), "yyyy-MM-dd HH:mm:ss")}
-                  </TableCell>
-                  <TableCell>{booking.customerName}</TableCell>
-                  <TableCell>{booking.customerPhone}</TableCell>
-                  <TableCell>{booking.customerEmail}</TableCell>
-                  <TableCell>{booking.studio}</TableCell>
-                  <TableCell>
-                    {format(new Date(booking.startDate), "yyyy-MM-dd")}
-                  </TableCell>
-                  <TableCell>{booking.startTime}</TableCell>
-                  <TableCell>{booking.endTime}</TableCell>
-                  <TableCell>${booking.subtotal}</TableCell>
-                  <TableCell>${booking.surcharge}</TableCell>
-                  <TableCell>${booking.estimatedTotal}</TableCell>
-                  <TableCell>
-                    <AddonsDisplay items={booking.items} />
-                  </TableCell>
-                  <TableCell>{totalHours} hours</TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
+      {/* Responsive table container */}
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Booking Time</TableHead>
+              <TableHead>Customer Name</TableHead>
+              <TableHead>Customer Phone</TableHead>
+              <TableHead>Customer Email</TableHead>
+              <TableHead>Studio</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Start Time</TableHead>
+              <TableHead>End Time</TableHead>
+              <TableHead>Subtotal</TableHead>
+              <TableHead>Surcharge</TableHead>
+              <TableHead>Total</TableHead>
+              <TableHead>Add‑ons</TableHead>
+              <TableHead>Total Hours</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredBookings.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={13} className="text-center text-gray-500">
+                  No bookings found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredBookings.map((booking) => {
+                // Compute total hours (using startDate for both start and end time)
+                let totalHours = "N/A";
+                try {
+                  const startDateTime = parse(
+                    `${format(new Date(booking.startDate), "yyyy-MM-dd")} ${
+                      booking.startTime
+                    }`,
+                    "yyyy-MM-dd h:mm a",
+                    new Date()
+                  );
+                  const endDateTime = parse(
+                    `${format(new Date(booking.startDate), "yyyy-MM-dd")} ${
+                      booking.endTime
+                    }`,
+                    "yyyy-MM-dd h:mm a",
+                    new Date()
+                  );
+                  totalHours = (
+                    (endDateTime - startDateTime) /
+                    (1000 * 60 * 60)
+                  ).toFixed(1);
+                } catch (e) {
+                  console.error("Error calculating total hours", e);
+                }
+
+                return (
+                  <TableRow key={booking._id}>
+                    <TableCell>
+                      {format(
+                        new Date(booking.createdAt),
+                        "yyyy-MM-dd HH:mm:ss"
+                      )}
+                    </TableCell>
+                    <TableCell>{booking.customerName}</TableCell>
+                    <TableCell>{booking.customerPhone}</TableCell>
+                    <TableCell>{booking.customerEmail}</TableCell>
+                    <TableCell>{booking.studio}</TableCell>
+                    <TableCell>
+                      {format(new Date(booking.startDate), "yyyy-MM-dd")}
+                    </TableCell>
+                    <TableCell>{booking.startTime}</TableCell>
+                    <TableCell>{booking.endTime}</TableCell>
+                    <TableCell>${booking.subtotal}</TableCell>
+                    <TableCell>${booking.surcharge}</TableCell>
+                    <TableCell>${booking.estimatedTotal}</TableCell>
+                    <TableCell>
+                      <AddonsDisplay items={booking.items} />
+                    </TableCell>
+                    <TableCell>{totalHours} hours</TableCell>
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

@@ -44,7 +44,7 @@ function DateTimeDisplay({
   if (date && isToday(date)) {
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const closingTimeMinutes = 21 * 60;
+    const closingTimeMinutes = 23 * 60;
     if (nowMinutes >= closingTimeMinutes) {
       displayTime = "---:--";
     }
@@ -89,11 +89,11 @@ export default function BookingPage() {
     if (startDate && isToday(startDate)) {
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const closingTimeMinutes = 21 * 60;
+      const closingTimeMinutes = 23 * 60;
       if (nowMinutes >= closingTimeMinutes) {
         const tomorrow = addDays(today, 1);
         setStartDate(tomorrow);
-        setStartTime("8:00 AM");
+        setStartTime("6:00 AM");
       }
     }
   }, [startDate, today, setStartDate, setStartTime]);
@@ -124,11 +124,15 @@ export default function BookingPage() {
         });
         const data = await res.json();
         // Filter bookings by studio and date.
+        console.log(data, "data");
+
         const filteredBookings = (data.bookings || []).filter(
           (booking) =>
             booking.studio === selectedStudio.name &&
             format(new Date(booking.startDate), "yyyy-MM-dd") === formattedDate
         );
+        console.log(filteredBookings, "fillterbookings");
+
         const blockedByDate = computeBlockedTimesByDate(filteredBookings);
         setBlockedTimesByDate(blockedByDate);
       } catch (error) {
@@ -152,9 +156,9 @@ export default function BookingPage() {
       endTime: !endTime,
     };
 
-    if (startTime && timeStringToMinutes(startTime) >= 21 * 60) {
+    if (startTime && timeStringToMinutes(startTime) >= 23 * 60) {
       newErrors.startTime = true;
-      alert("Invalid start time. Must be before 9:00 PM.");
+      alert("Invalid start time. Must be before 11:00 PM.");
     }
     // Create Date objects using the same date for both start and end times.
     const startDateTime = new Date(startDate);

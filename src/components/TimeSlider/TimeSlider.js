@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { FaAngleUp, FaAngleDown } from "react-icons/fa";
 import { isToday } from "date-fns";
 
-// 1) Generate an array of times in 1‑hour increments from 8:00 AM to 9:00 PM.
+// 1) Generate an array of times in 1‑hour increments from 6:00 AM to 11:00 PM.
 function generateTimes() {
   const times = [];
-  // Start at 6 (6:00 AM) and go up to 23 (11:00 PM)
   for (let hour = 6; hour <= 23; hour++) {
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
     const period = hour < 12 ? "AM" : "PM";
@@ -16,10 +15,9 @@ function generateTimes() {
 
 const ALL_TIMES = generateTimes();
 
-// 2) If the current time is 11:10 AM, the next slot is "12:00 PM".
+// 2) Get the nearest valid time index.
 function getNearestValidTimeIndex() {
   const now = new Date();
-  // Round up to the next full hour
   const rounded = new Date(
     now.getFullYear(),
     now.getMonth(),
@@ -36,7 +34,7 @@ function getNearestValidTimeIndex() {
   return index !== -1 ? index : 0;
 }
 
-// 3) Convert a time string like "11:00 AM" to minutes after midnight
+// 3) Convert a time string like "11:00 AM" to minutes after midnight.
 function timeStringToMinutes(timeStr) {
   const [time, period] = timeStr.split(" ");
   const [hourStr, minuteStr] = time.split(":");
@@ -54,34 +52,36 @@ export default function TimeSlider({
   blockedTimes = new Set(),
 }) {
   const isDateToday = selectedDate && isToday(selectedDate);
+  console.log(blockedTimes, "blocked times");
 
-  // If today and current time is >= 9:00 PM, no slots are available
+  // If today and current time is >= closingTimeMinutes, no slots are available.
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const closingTimeMinutes = 21 * 60; // 9:00 PM
+  const closingTimeMinutes = 23 * 60;
   const noSlotsAvailable = isDateToday && nowMinutes >= closingTimeMinutes;
 
-  // 4) Determine the initial index
+  // 4) Determine the initial index.
   const nearestIndex = isDateToday ? getNearestValidTimeIndex() : 0;
   const initialIndex = isDateToday ? nearestIndex : ALL_TIMES.indexOf(value);
   const [currentIndex, setCurrentIndex] = useState(
     initialIndex >= 0 ? initialIndex : 0
   );
 
-  // 5) Scroll container reference
+  // 5) Scroll container reference.
   const containerRef = useRef(null);
 
-  // 6) Create a combined blocked set: include those passed via props plus any past slots (if today).
+  // 6) Create a combined blocked set (in minutes): include those passed via props plus any past slots (if today).
   const combinedBlocked = new Set(blockedTimes);
   if (isDateToday) {
     ALL_TIMES.forEach((slot) => {
-      if (timeStringToMinutes(slot) < nowMinutes) {
-        combinedBlocked.add(slot);
+      const slotMins = timeStringToMinutes(slot);
+      if (slotMins < nowMinutes) {
+        combinedBlocked.add(slotMins);
       }
     });
   }
 
-  // 7) Scroll to the selected time slot when currentIndex changes
+  // 7) Scroll to the selected time slot when currentIndex changes.
   useEffect(() => {
     if (containerRef.current) {
       const slotElement = containerRef.current.querySelector(
@@ -93,24 +93,30 @@ export default function TimeSlider({
     }
   }, [currentIndex]);
 
-  // 8) If the current slot is blocked, jump to the next available slot.
+  // 8) Helper functions to jump to the next/previous available slot.
   function findNextAvailableIndex(index) {
     let i = index;
-    while (i < ALL_TIMES.length && combinedBlocked.has(ALL_TIMES[i])) {
+    while (
+      i < ALL_TIMES.length &&
+      combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))
+    ) {
       i++;
     }
     return i < ALL_TIMES.length ? i : index;
   }
   function findPrevAvailableIndex(index) {
     let i = index;
-    while (i >= 0 && combinedBlocked.has(ALL_TIMES[i])) {
+    while (i >= 0 && combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))) {
       i--;
     }
     return i >= 0 ? i : index;
   }
 
   useEffect(() => {
-    if (!noSlotsAvailable && combinedBlocked.has(ALL_TIMES[currentIndex])) {
+    if (
+      !noSlotsAvailable &&
+      combinedBlocked.has(timeStringToMinutes(ALL_TIMES[currentIndex]))
+    ) {
       const newIndex = findNextAvailableIndex(currentIndex);
       if (newIndex !== currentIndex) {
         setCurrentIndex(newIndex);
@@ -120,7 +126,7 @@ export default function TimeSlider({
     }
   }, [combinedBlocked, currentIndex, onChange, noSlotsAvailable]);
 
-  // 9) Arrow handlers
+  // 9) Arrow handlers.
   function handleUp() {
     let newIndex = isDateToday
       ? Math.max(nearestIndex, currentIndex - 1)
@@ -134,7 +140,7 @@ export default function TimeSlider({
     setCurrentIndex(newIndex);
   }
 
-  // 10) If no slots are available, show a message
+  // 10) If no slots are available, show a message.
   if (noSlotsAvailable) {
     return (
       <div className="text-red-500 font-bold">No slots available for today</div>
@@ -144,10 +150,9 @@ export default function TimeSlider({
   const showUpArrow =
     !isDateToday || (isDateToday && currentIndex > nearestIndex);
 
-  // 11) Handle slot click
+  // 11) Handle slot click.
   function handleSlotClick(i) {
-    // If it's blocked, do nothing.
-    if (combinedBlocked.has(ALL_TIMES[i])) return;
+    if (combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))) return;
     setCurrentIndex(i);
   }
 
@@ -168,9 +173,8 @@ export default function TimeSlider({
         className="h-64 w-full overflow-y-auto border border-gray-300 rounded-lg p-2"
       >
         {ALL_TIMES.map((slot, i) => {
-          const isBlocked = combinedBlocked.has(slot);
+          const isBlocked = combinedBlocked.has(timeStringToMinutes(slot));
           const isSelected = i === currentIndex;
-
           const slotClass = isBlocked
             ? "bg-gray-200 text-gray-400 pointer-events-none"
             : "bg-white text-black cursor-pointer hover:bg-blue-50";

@@ -41,14 +41,6 @@ export function BookingProvider({ children }) {
   // Example "cart items" or add‑on items with images.
   const [items, setItems] = useState([
     {
-      id: 1,
-      name: "Makeup",
-      price: 20,
-      quantity: 0,
-      image: "/service/makeup.avif",
-    },
-
-    {
       id: 6,
       name: "Photography",
       price: 350,
@@ -68,6 +60,13 @@ export function BookingProvider({ children }) {
       price: 250,
       quantity: 0,
       image: "/service/hair.webp",
+    },
+    {
+      id: 1,
+      name: "Makeup",
+      price: 300,
+      quantity: 0,
+      image: "/service/makeup.avif",
     },
 
     {

@@ -53,8 +53,8 @@ export default function CheckoutPage() {
     selectedStudio && studioHours > 0
       ? studioHours * selectedStudio.pricePerHour
       : 0;
-  const surcharge = 400;
-  const estimatedTotal = subtotal + studioCost + surcharge;
+
+  const estimatedTotal = subtotal + studioCost;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -90,7 +90,6 @@ export default function CheckoutPage() {
           items,
           subtotal,
           studioCost,
-          surcharge,
           estimatedTotal,
           // Add new customer fields
           customerName,
@@ -135,7 +134,8 @@ export default function CheckoutPage() {
 
       {/* Studio Details Section */}
       <div className="bg-white p-6 shadow-sm mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {/* Studio Name */}
           <div className="flex flex-col gap-1">
             <p className="text-gray-600 text-sm font-semibold">Studio Name</p>
             <div className="p-3 flex items-center gap-1 text-[14px] bg-gray-100">
@@ -147,6 +147,8 @@ export default function CheckoutPage() {
                 : studio}
             </div>
           </div>
+
+          {/* Working Hours Start */}
           <div className="flex flex-col gap-1">
             <p className="text-gray-600 text-sm font-semibold">
               Working Hours Start
@@ -155,6 +157,8 @@ export default function CheckoutPage() {
               <DateTimeDisplay date={startDate} time={startTime} />
             </div>
           </div>
+
+          {/* Working Hours End */}
           <div className="flex flex-col gap-1">
             <p className="text-gray-600 text-sm font-semibold">
               Working Hours End
@@ -178,7 +182,6 @@ export default function CheckoutPage() {
             <p className="text-gray-600 text-sm font-semibold">Total Price</p>
             <div className="p-3 text-[16px] bg-gray-100">
               {(() => {
-                // Calculate duration in hours and then the total price.
                 if (startTime && endTime && selectedStudio) {
                   const startMins = timeStringToMinutes(startTime);
                   const endMins = timeStringToMinutes(endTime);
@@ -266,10 +269,7 @@ export default function CheckoutPage() {
             <p>Studio Price</p>
             <p>${studioCost.toFixed(2)}</p>
           </div>
-          <div className="flex justify-between">
-            <p>Surcharge</p>
-            <p>${surcharge.toFixed(2)}</p>
-          </div>
+
           <div className="flex justify-between font-bold text-xl mt-2">
             <p>Estimated Total</p>
             <p className="text-black">${estimatedTotal.toFixed(2)}</p>

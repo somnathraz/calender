@@ -24,7 +24,6 @@ export default async function handler(req, res) {
       items: clientItems,
       subtotal: clientSubtotal,
       studioCost,
-      surcharge,
       estimatedTotal: clientTotal,
       // New customer fields
       customerName,
@@ -33,7 +32,7 @@ export default async function handler(req, res) {
       timestamp, // local timestamp sent from frontend
     } = req.body;
 
-    console.log(customerName, customerEmail, customerPhone, "studio name");
+    console.log(endDate, endTime, startTime, "studio name");
 
     // 1️⃣ Validate Product Catalog
     const productDoc = await Product.findOne().lean();
@@ -84,7 +83,7 @@ export default async function handler(req, res) {
     console.log("✅ Subtotal validation passed.");
 
     // 4️⃣ Validate Total Calculation
-    const recalculatedTotal = recalculatedSubtotal + studioCost + surcharge;
+    const recalculatedTotal = recalculatedSubtotal + studioCost;
     if (Number(clientTotal) !== recalculatedTotal) {
       console.error(
         `❌ Total mismatch: Expected ${recalculatedTotal}, got ${clientTotal}`
@@ -104,7 +103,6 @@ export default async function handler(req, res) {
       items: clientItems,
       subtotal: recalculatedSubtotal,
       studioCost,
-      surcharge,
       estimatedTotal: recalculatedTotal,
       paymentStatus: "pending",
       customerName,

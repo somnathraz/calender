@@ -57,37 +57,19 @@ export function generateDailySlots() {
 
 // Compute blocked times keyed by date.
 export function computeBlockedTimesByDate(bookings) {
-  const blockedTimesByDate = {};
-  const dailySlots = generateDailySlots();
-
+  const blocked = {};
   bookings.forEach((booking) => {
-    const bookingStartDate = startOfDay(new Date(booking.startDate));
-    const bookingEndDate = startOfDay(new Date(booking.endDate));
-    const dayCount = differenceInCalendarDays(bookingEndDate, bookingStartDate);
-
-    for (let offset = 0; offset <= dayCount; offset++) {
-      const currentDay = addDays(bookingStartDate, offset);
-      const dateKey = format(currentDay, "yyyy-MM-dd");
-      if (!blockedTimesByDate[dateKey]) {
-        blockedTimesByDate[dateKey] = new Set();
-      }
-
-      // For the first day, use booking.startTime; for other days, assume "8:00 AM"
-      const effectiveStart = offset === 0 ? booking.startTime : "8:00 AM";
-      // For the last day, use booking.endTime; for intermediate days, assume "9:00 PM"
-      const effectiveEnd = offset === dayCount ? booking.endTime : "9:00 PM";
-
-      const bookingStartMins = timeStringToMinutes(effectiveStart);
-      const bookingEndMins = timeStringToMinutes(effectiveEnd);
-      const blockThreshold = bookingEndMins + 30; // add 30-minute buffer
-
-      dailySlots.forEach((slot) => {
-        const slotMins = timeStringToMinutes(slot);
-        if (slotMins >= bookingStartMins && slotMins < blockThreshold) {
-          blockedTimesByDate[dateKey].add(slot);
-        }
-      });
+    // Use startDate as the key (assuming bookings only have one date)
+    const dateKey = format(new Date(booking.startDate), "yyyy-MM-dd");
+    if (!blocked[dateKey]) {
+      blocked[dateKey] = new Set();
+    }
+    const start = timeStringToMinutes(booking.startTime);
+    const end = timeStringToMinutes(booking.endTime);
+    // Add each 30-minute slot between start and end.
+    for (let t = start; t < end; t += 30) {
+      blocked[dateKey].add(t);
     }
   });
-  return blockedTimesByDate;
+  return blocked;
 }

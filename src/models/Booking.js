@@ -34,10 +34,6 @@ const BookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  surcharge: {
-    type: Number,
-    required: true,
-  },
   estimatedTotal: {
     type: Number,
     required: true,

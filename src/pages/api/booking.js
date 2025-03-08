@@ -14,7 +14,7 @@ export default async function handler(req, res) {
         endTime,
         items,
         subtotal,
-        surcharge,
+
         estimatedTotal,
       } = req.body;
 
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "Invalid subtotal" });
       }
 
-      const recalculatedTotal = recalculatedSubtotal + surcharge;
+      const recalculatedTotal = recalculatedSubtotal;
       if (Number(estimatedTotal) !== recalculatedTotal) {
         return res.status(400).json({ message: "Total mismatch" });
       }
@@ -41,7 +41,6 @@ export default async function handler(req, res) {
         endTime,
         items,
         subtotal: recalculatedSubtotal,
-        surcharge,
         estimatedTotal: recalculatedTotal,
       });
 
@@ -52,6 +51,10 @@ export default async function handler(req, res) {
       res.status(500).json({ message: "Server error" });
     }
   } else if (req.method === "GET") {
+    console.log("hello");
+    // Disable caching by setting the Cache-Control header:
+    res.setHeader("Cache-Control", "no-store, max-age=0");
+
     try {
       // Fetch all booking details from the database
       const bookings = await Booking.find({});
@@ -60,6 +63,8 @@ export default async function handler(req, res) {
       console.error(error);
       res.status(500).json({ message: "Server error" });
     }
+  } else if (req.method === "POST") {
+    // ... your POST code ...
   } else {
     res.status(405).json({ message: "Method not allowed" });
   }
