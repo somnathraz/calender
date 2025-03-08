@@ -4,6 +4,7 @@ import styles from "@/styles/Checkout.module.css";
 import { FiBox } from "react-icons/fi";
 import { MdCalendarMonth, MdAccessTime, MdLocationOn } from "react-icons/md";
 import { loadStripe } from "@stripe/stripe-js";
+import { timeStringToMinutes } from "@/utils/bookingHelpers";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -33,7 +34,6 @@ export default function CheckoutPage() {
     studio,
     startDate,
     startTime,
-    endDate,
     endTime,
     items,
     updateItemQuantity,
@@ -46,8 +46,8 @@ export default function CheckoutPage() {
     0
   );
   const studioHours =
-    selectedStudio && startDate && endDate
-      ? (endDate - startDate) / (1000 * 60 * 60)
+    selectedStudio && startDate && endTime
+      ? (timeStringToMinutes(endTime) - timeStringToMinutes(startTime)) / 60
       : 0;
   const studioCost =
     selectedStudio && studioHours > 0
@@ -86,7 +86,6 @@ export default function CheckoutPage() {
           studio: selectedStudio.name,
           startDate,
           startTime,
-          endDate,
           endTime,
           items,
           subtotal,
@@ -115,6 +114,7 @@ export default function CheckoutPage() {
       setError("Server error. Please try again later.");
     }
   };
+  console.log(selectedStudio, "selected studio");
 
   // When Checkout is clicked, open the modal
   const openModal = () => {
@@ -160,7 +160,34 @@ export default function CheckoutPage() {
               Working Hours End
             </p>
             <div className="p-3 text-[16px] bg-gray-100">
-              <DateTimeDisplay date={endDate} time={endTime} />
+              <DateTimeDisplay date={startDate} time={endTime} />
+            </div>
+          </div>
+
+          {/* Price per Hr */}
+          <div className="flex flex-col gap-1">
+            <p className="text-gray-600 text-sm font-semibold">Price per Hr</p>
+            <div className="p-3 text-[16px] bg-gray-100">
+              $
+              {selectedStudio ? selectedStudio.pricePerHour.toFixed(2) : "0.00"}
+            </div>
+          </div>
+
+          {/* Total Price */}
+          <div className="flex flex-col gap-1">
+            <p className="text-gray-600 text-sm font-semibold">Total Price</p>
+            <div className="p-3 text-[16px] bg-gray-100">
+              {(() => {
+                // Calculate duration in hours and then the total price.
+                if (startTime && endTime && selectedStudio) {
+                  const startMins = timeStringToMinutes(startTime);
+                  const endMins = timeStringToMinutes(endTime);
+                  const duration = (endMins - startMins) / 60;
+                  const total = selectedStudio.pricePerHour * duration;
+                  return `$${total.toFixed(2)}`;
+                }
+                return "$0.00";
+              })()}
             </div>
           </div>
         </div>

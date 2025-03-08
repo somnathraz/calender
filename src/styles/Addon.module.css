@@ -5,6 +5,12 @@
   border-radius: 10px;
   position: relative;
 }
+.wrapper {
+  display: flex;
+  flex-flow: column;
+  gap: 20px;
+  padding: 8rem;
+}
 .addonGrid {
   display: grid;
   grid-template-columns: 33% 33% 33%;
@@ -17,5 +23,8 @@
   }
   .addonGrid {
     grid-template-columns: 49% 49%;
+  }
+  .wrapper {
+    padding: 1.5rem;
   }
 }

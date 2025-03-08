@@ -31,17 +31,12 @@ export const BookingContext = createContext();
 export function BookingProvider({ children }) {
   // Selected studio is now stored as an object.
   // Default to the first studio (or set to null if you prefer no default).
-  const [selectedStudio, setSelectedStudio] = useState(studiosList[0]);
   const today = startOfDay(new Date());
-  const defaultStartDate = today;
-  const defaultEndDate = addDays(today, 1); // Default to 2 days range
-  const [startDate, setStartDate] = useState(defaultStartDate);
-  const [endDate, setEndDate] = useState(defaultEndDate);
+  const [selectedStudio, setSelectedStudio] = useState(null);
+  const [startDate, setStartDate] = useState(today);
   const [startTime, setStartTime] = useState(getNearestValidTime());
   const [endTime, setEndTime] = useState("10:00 AM");
-
   // Placeholder image URL
-  const placeholderImage = "/addon.png";
 
   // Example "cart items" or add‑on items with images.
   const [items, setItems] = useState([
@@ -74,13 +69,7 @@ export function BookingProvider({ children }) {
       quantity: 0,
       image: "/service/hair.webp",
     },
-    {
-      id: 9,
-      name: "Makeup",
-      price: 300,
-      quantity: 0,
-      image: "/service/makeup.avif",
-    },
+
     {
       id: 10,
       name: "Models",
@@ -120,6 +109,8 @@ export function BookingProvider({ children }) {
 
   // Provide a function to update item quantity.
   const updateItemQuantity = (itemId, delta) => {
+    console.log(itemId, delta);
+
     setItems((prev) =>
       prev.map((item) =>
         item.id === itemId
@@ -139,8 +130,6 @@ export function BookingProvider({ children }) {
         setStartDate,
         startTime,
         setStartTime,
-        endDate,
-        setEndDate,
         endTime,
         setEndTime,
         items,

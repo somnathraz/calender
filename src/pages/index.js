@@ -17,17 +17,16 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 
-// Your custom components / styles
+// Custom components and styles
 import TimeSlider from "@/components/TimeSlider/TimeSlider";
 import styles from "@/styles/Home.module.css";
 import { BookingContext } from "@/context/BookingContext";
 import { useRouter } from "next/router";
 
-// Import helpers for multi-day booking support
+// Import helper for time conversion and blocked times
 import {
   timeStringToMinutes,
   computeBlockedTimesByDate,
-  getTimeSlotsRange,
 } from "@/utils/bookingHelpers";
 
 /**
@@ -66,14 +65,10 @@ export default function BookingPage() {
     studiosList,
     selectedStudio,
     setSelectedStudio,
-    studio,
-    setStudio,
     startDate,
     setStartDate,
     startTime,
     setStartTime,
-    endDate,
-    setEndDate,
     endTime,
     setEndTime,
   } = useContext(BookingContext);
@@ -83,14 +78,13 @@ export default function BookingPage() {
     studio: false,
     startDate: false,
     startTime: false,
-    endDate: false,
     endTime: false,
   });
 
-  // Instead of a single blockedTimes set, store blocked times per date.
+  // Compute blocked times for the selected date.
   const [blockedTimesByDate, setBlockedTimesByDate] = useState({});
 
-  // Effect: If today's date is selected and current time is past closing, update to tomorrow.
+  // If today's date is selected and current time is past closing, update to tomorrow.
   useEffect(() => {
     if (startDate && isToday(startDate)) {
       const now = new Date();
@@ -105,20 +99,15 @@ export default function BookingPage() {
   }, [startDate, today, setStartDate, setStartTime]);
 
   const [monthsToShow, setMonthsToShow] = useState(2);
-
-  // Detect screen size and adjust `numberOfMonths`
   useEffect(() => {
     const updateMonthsToShow = () => {
       if (window.innerWidth < 768) {
-        // Mobile screens: Show 1 month below the other
         setMonthsToShow(1);
       } else {
-        // Desktop screens: Show 2 months side by side
         setMonthsToShow(2);
       }
     };
-
-    updateMonthsToShow(); // Initial check
+    updateMonthsToShow();
     window.addEventListener("resize", updateMonthsToShow);
     return () => window.removeEventListener("resize", updateMonthsToShow);
   }, []);
@@ -134,11 +123,12 @@ export default function BookingPage() {
           headers: { "Content-Type": "application/json" },
         });
         const data = await res.json();
-        // Filter the bookings for the selected studio
+        // Filter bookings by studio and date.
         const filteredBookings = (data.bookings || []).filter(
-          (booking) => booking.studio === selectedStudio.name
+          (booking) =>
+            booking.studio === selectedStudio.name &&
+            format(new Date(booking.startDate), "yyyy-MM-dd") === formattedDate
         );
-        // Compute blocked times only for the filtered bookings
         const blockedByDate = computeBlockedTimesByDate(filteredBookings);
         setBlockedTimesByDate(blockedByDate);
       } catch (error) {
@@ -149,37 +139,16 @@ export default function BookingPage() {
     console.log("Fetching bookings for studio:", selectedStudio);
   }, [selectedStudio, startDate]);
 
-  // For TimeSlider components, pick the blocked set for the selected day.
   const startDateKey = startDate ? format(startDate, "yyyy-MM-dd") : "";
-  const endDateKey = endDate ? format(endDate, "yyyy-MM-dd") : "";
   const blockedTimesForStartDate =
     blockedTimesByDate[startDateKey] || new Set();
-  const blockedTimesForEndDate = blockedTimesByDate[endDateKey] || new Set();
 
-  // For the calendar, we want to show two months side by side.
-  // When selecting a range, we want the first click to set the start date and the second to set the end date.
-  // Modify the onSelect callback so that if the range object does not include a "to" date, we update only the start date.
-  const handleRangeSelect = (range) => {
-    if (!range) return;
-
-    if (!range.to) {
-      // If only one date is selected, set both start and end to that date
-      setStartDate(range.from);
-      setEndDate(range.from);
-    } else {
-      // If both dates are selected, set accordingly
-      setStartDate(range.from);
-      setEndDate(range.to);
-    }
-  };
-
-  // Validate required fields and conditions.
+  // Validate and process booking details.
   const handleNext = () => {
     const newErrors = {
       studio: !selectedStudio,
       startDate: !startDate,
       startTime: !startTime,
-      endDate: !endDate,
       endTime: !endTime,
     };
 
@@ -187,79 +156,46 @@ export default function BookingPage() {
       newErrors.startTime = true;
       alert("Invalid start time. Must be before 9:00 PM.");
     }
+    // Create Date objects using the same date for both start and end times.
     const startDateTime = new Date(startDate);
-    const endDateTime = new Date(endDate);
-    const startDateTimeWithTime = new Date(startDate);
-    const endDateTimeWithTime = new Date(endDate);
+    const endDateTime = new Date(startDate);
+    const startMinutes = timeStringToMinutes(startTime);
+    const endMinutes = timeStringToMinutes(endTime);
 
-    if (startTime !== "---:--" && endTime !== "---:--") {
-      const startMinutes = timeStringToMinutes(startTime);
-      const endMinutes = timeStringToMinutes(endTime);
-
-      // Set the hours and minutes on the date objects
-      startDateTimeWithTime.setHours(
-        Math.floor(startMinutes / 60),
-        startMinutes % 60,
-        0,
-        0
-      );
-      endDateTimeWithTime.setHours(
-        Math.floor(endMinutes / 60),
-        endMinutes % 60,
-        0,
-        0
-      );
-
-      // Now compare the full datetime objects
-      if (endDateTimeWithTime <= startDateTimeWithTime) {
-        newErrors.endTime = true;
-        alert("End time must be after start time.");
-      }
-    }
-
-    // Additional check for minimum booking duration (1 hour)
-    if (startTime !== "---:--") {
-      // Create Date objects for start and end times using their respective dates.
-      const startDateTime = new Date(startDate);
-      const endDateTime = new Date(endDate);
-
-      // Convert time strings to minutes since midnight
-      const startMinutes = timeStringToMinutes(startTime);
-      const endMinutes = timeStringToMinutes(endTime);
-
-      // Set the hours and minutes on the date objects accordingly.
-      startDateTime.setHours(
-        Math.floor(startMinutes / 60),
-        startMinutes % 60,
-        0,
-        0
-      );
-      endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
-
-      // Calculate the total difference in minutes
-      const diffInMinutes = (endDateTime - startDateTime) / 60000;
-      if (diffInMinutes < 60) {
-        newErrors.endTime = true;
-        alert("Minimum booking time is 1 hour.");
-      }
-    }
-
-    // New multi-day range check:
-    const rangeSlots = getTimeSlotsRange(
-      startDate,
-      startTime,
-      endDate,
-      endTime
+    startDateTime.setHours(
+      Math.floor(startMinutes / 60),
+      startMinutes % 60,
+      0,
+      0
     );
+    endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
+
+    if (endDateTime <= startDateTime) {
+      newErrors.endTime = true;
+      alert("End time must be after start time.");
+    }
+
+    // Minimum booking duration check (1 hour).
+    const diffInMinutes = (endDateTime - startDateTime) / 60000;
+    if (diffInMinutes < 60) {
+      newErrors.endTime = true;
+      alert("Minimum booking time is 1 hour.");
+    }
+
+    // Optionally, check for conflicts in the selected day (using a simple 30‑minute step).
     let conflictFound = false;
-    rangeSlots.forEach(({ date, time }) => {
-      const blockedSet = blockedTimesByDate[date] || new Set();
-      if (blockedSet.has(time)) {
+    for (
+      let time = timeStringToMinutes(startTime);
+      time < timeStringToMinutes(endTime);
+      time += 30
+    ) {
+      if (blockedTimesForStartDate.has(time)) {
         conflictFound = true;
+        break;
       }
-    });
-    if (rangeSlots.length > 0 && conflictFound) {
-      alert("Time slots not available in the selected range.");
+    }
+    if (conflictFound) {
+      alert("Time slots not available on the selected day.");
       return;
     }
 
@@ -267,7 +203,6 @@ export default function BookingPage() {
       newErrors.studio ||
       newErrors.startDate ||
       newErrors.startTime ||
-      newErrors.endDate ||
       newErrors.endTime
     ) {
       setErrors(newErrors);
@@ -284,7 +219,7 @@ export default function BookingPage() {
           <div className={styles.wrap}>
             <label className="w-40 text-xs font-bold mb-1">Select Studio</label>
             <Select
-              value={selectedStudio?.name}
+              value={selectedStudio ? selectedStudio.name : ""}
               onValueChange={(studioName) => {
                 const studioObj = studiosList.find(
                   (s) => s.name === studioName
@@ -304,6 +239,7 @@ export default function BookingPage() {
                 ))}
               </SelectContent>
             </Select>
+
             {errors.studio && (
               <p className="text-red-500 text-xs mt-1">* Studio is required</p>
             )}
@@ -354,9 +290,9 @@ export default function BookingPage() {
               <PopoverTrigger asChild>
                 <div onClick={() => {}}>
                   <DateTimeDisplay
-                    date={endDate}
+                    date={startDate}
                     time={endTime}
-                    fallbackDate="Tue (05/12)"
+                    fallbackDate="Mon (05/12)"
                     fallbackTime="10:00 AM"
                   />
                 </div>
@@ -365,16 +301,11 @@ export default function BookingPage() {
                 <TimeSlider
                   value={endTime}
                   onChange={(val) => setEndTime(val)}
-                  selectedDate={endDate}
-                  blockedTimes={blockedTimesForEndDate}
+                  selectedDate={startDate}
+                  blockedTimes={blockedTimesForStartDate}
                 />
               </PopoverContent>
             </Popover>
-            {errors.endDate && (
-              <p className="text-red-500 text-xs mt-1">
-                * End date is required
-              </p>
-            )}
             {errors.endTime && (
               <p className="text-red-500 text-xs mt-1">
                 * End time is required or must be after start time
@@ -391,18 +322,16 @@ export default function BookingPage() {
         </div>
       </div>
       {/* Calendar Section */}
-      <div className="mt-4 w-auto sm:w-full flex justify-center items-center  ">
+      <div className="mt-4 w-auto sm:w-full flex justify-center items-center">
         <div className={styles.CalendarWrap}>
-          {/* Calendar Component */}
           <Calendar
-            mode="range"
+            mode="single"
             inline
             isClearable={true}
-            selected={{ from: startDate, to: endDate }}
+            selected={startDate}
             disabled={{ before: new Date() }}
-            onSelect={(range) => handleRangeSelect(range)}
-            numberOfMonths={monthsToShow} // Dynamically set based on screen width
-            // className="w-auto sm:w-full max-w-lg mx-auto" // Ensures width changes based on screen size
+            onSelect={(value) => setStartDate(value)}
+            numberOfMonths={monthsToShow}
           />
         </div>
       </div>

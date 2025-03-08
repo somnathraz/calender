@@ -3,7 +3,7 @@ import Booking from "@/models/Booking";
 
 export default async function handler(req, res) {
   await dbConnect();
-  console.log("geting get call");
+
   if (req.method === "POST") {
     try {
       // Extract data from request body (you should validate these fields)
@@ -11,7 +11,6 @@ export default async function handler(req, res) {
         studio,
         startDate,
         startTime,
-        endDate,
         endTime,
         items,
         subtotal,
@@ -19,6 +18,7 @@ export default async function handler(req, res) {
         estimatedTotal,
       } = req.body;
 
+      // Recalculate totals on the server for security:
       // Recalculate totals on the server for security:
       const recalculatedSubtotal = items.reduce(
         (acc, item) => acc + item.quantity * item.price,
@@ -38,7 +38,6 @@ export default async function handler(req, res) {
         studio,
         startDate,
         startTime,
-        endDate,
         endTime,
         items,
         subtotal: recalculatedSubtotal,

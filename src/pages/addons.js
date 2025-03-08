@@ -6,12 +6,16 @@ import { useRouter } from "next/router";
 
 // Helper function to parse a date and time string into a Date object.
 function parseDateTime(date, timeStr) {
+  if (!date || !timeStr) return null;
+
   const [time, period] = timeStr.split(" ");
   const [hourStr, minuteStr] = time.split(":");
   let hour = parseInt(hourStr, 10);
   const minute = parseInt(minuteStr, 10);
+
   if (period === "PM" && hour !== 12) hour += 12;
   if (period === "AM" && hour === 12) hour = 0;
+
   return new Date(
     date.getFullYear(),
     date.getMonth(),
@@ -22,29 +26,25 @@ function parseDateTime(date, timeStr) {
 }
 
 export default function AddOnsPage() {
-  const {
-    selectedStudio,
-    studio,
-    startDate,
-    startTime,
-    endDate,
-    endTime,
-    items,
-    updateItemQuantity,
-  } = useContext(BookingContext);
+  const { startDate, startTime, endTime, items, updateItemQuantity } =
+    useContext(BookingContext);
   const router = useRouter();
 
   // Compute the booking duration in hours.
   let maxAddonHours = 0;
-  if (startDate && endDate && startTime && endTime) {
+  if (startDate && startTime && endTime) {
     const startDT = parseDateTime(startDate, startTime);
-    const endDT = parseDateTime(endDate, endTime);
-    const durationMs = endDT - startDT;
-    maxAddonHours = Math.floor(durationMs / 3600000); // 1 hour = 3600000 ms
+    const endDT = parseDateTime(startDate, endTime); // Use the same startDate for end time
+
+    if (startDT && endDT) {
+      const durationMs = endDT - startDT;
+      maxAddonHours = Math.max(Math.floor(durationMs / 3600000), 1); // Ensure at least 1 hour
+    }
   }
+  console.log(maxAddonHours);
 
   return (
-    <div className="p-6">
+    <div className={styles.wrapper}>
       {/* <h2 className="text-2xl font-bold mb-4">Add-Ons / Cart</h2> */}
 
       {/* Booking Details */}
@@ -73,14 +73,22 @@ export default function AddOnsPage() {
       {/* Add-On Items */}
       <div className={styles.addonGrid}>
         {items.map((item) => (
-          <div key={item.id} className="flex flex-col gap-2 mb-3 ">
+          <div key={item.id} className="flex flex-col gap-2 mb-3  ">
             {/* Item Image */}
-            <div className={styles.image}>
-              <Image src={item.image} alt={item.name} fill className=" mb-2" />
+            <div className="relative w-full aspect-square">
+              <Image
+                src={item.image}
+                alt={item.name}
+                fill
+                className="object-cover mb-2"
+              />
             </div>
+
             {/* Item Name & Price */}
             <div className="flex justify-between flex-wrap px-2">
-              <p className="font-semibold text-sm w-[50%]">{item.name}</p>
+              <p className="font-semibold text-sm w-[50%] uppercase">
+                {item.name}
+              </p>
               {/* Quantity Controls */}
               <div className="flex gap-2 items-center ">
                 <p className="text-gray-600 font-bold text-sm">

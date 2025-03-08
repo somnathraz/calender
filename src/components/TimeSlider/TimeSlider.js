@@ -5,7 +5,8 @@ import { isToday } from "date-fns";
 // 1) Generate an array of times in 1‑hour increments from 8:00 AM to 9:00 PM.
 function generateTimes() {
   const times = [];
-  for (let hour = 8; hour <= 21; hour++) {
+  // Start at 6 (6:00 AM) and go up to 23 (11:00 PM)
+  for (let hour = 6; hour <= 23; hour++) {
     const h12 = hour % 12 === 0 ? 12 : hour % 12;
     const period = hour < 12 ? "AM" : "PM";
     times.push(`${h12}:00 ${period}`);

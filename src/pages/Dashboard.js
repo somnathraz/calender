@@ -17,12 +17,14 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { saveAs } from "file-saver";
+import AddonsDisplay from "@/components/Addon/AddonDisplay";
 
 export default function BookingDashboard() {
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [monthFilter, setMonthFilter] = useState("");
   const [yearFilter, setYearFilter] = useState("");
+  const [sortOption, setSortOption] = useState("");
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -61,6 +63,17 @@ export default function BookingDashboard() {
       );
     }
 
+    // Sorting mechanism
+    if (sortOption === "date-asc") {
+      filtered.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    } else if (sortOption === "date-desc") {
+      filtered.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    } else if (sortOption === "studio-asc") {
+      filtered.sort((a, b) => a.studio.localeCompare(b.studio));
+    } else if (sortOption === "studio-desc") {
+      filtered.sort((a, b) => b.studio.localeCompare(a.studio));
+    }
+
     console.log("📌 Filtered Bookings:", filtered);
     setFilteredBookings(filtered);
   };
@@ -68,6 +81,7 @@ export default function BookingDashboard() {
   const clearFilters = () => {
     setMonthFilter("");
     setYearFilter("");
+    setSortOption("");
     setFilteredBookings(bookings);
   };
 
@@ -83,12 +97,11 @@ export default function BookingDashboard() {
     // Get today's local date (without the time)
     const exportDate = new Date().toLocaleDateString();
 
-    // Create an export header row
+    // Create an export header row (removed End Date)
     const exportHeader = `Exported On: ${exportDate}\n\n`;
 
-    // Extend headers to include new customer fields and booking time
     const headers =
-      "Booking Time,Customer Name,Customer Phone,Customer Email,Studio,Start Date,Start Time,End Date,End Time,Subtotal,Surcharge,Total,Add‑ons,Total Hours\n";
+      "Booking Time,Customer Name,Customer Phone,Customer Email,Studio,Date,Start Time,End Time,Subtotal,Surcharge,Total,Add‑ons,Total Hours\n";
 
     const csvRows = filteredBookings.map((b) => {
       // Build add-ons string from items array
@@ -100,7 +113,7 @@ export default function BookingDashboard() {
               .join("; ")
           : "None";
 
-      // Compute total hours using date-fns parse
+      // Compute total hours using date-fns parse (using startDate for both)
       let totalHours = "N/A";
       try {
         const startDateTime = parse(
@@ -109,7 +122,7 @@ export default function BookingDashboard() {
           new Date()
         );
         const endDateTime = parse(
-          `${format(new Date(b.endDate), "yyyy-MM-dd")} ${b.endTime}`,
+          `${format(new Date(b.startDate), "yyyy-MM-dd")} ${b.endTime}`,
           "yyyy-MM-dd h:mm a",
           new Date()
         );
@@ -125,9 +138,7 @@ export default function BookingDashboard() {
       },${b.customerPhone},${b.customerEmail},${b.studio},${format(
         new Date(b.startDate),
         "yyyy-MM-dd"
-      )},${b.startTime},${format(new Date(b.endDate), "yyyy-MM-dd")},${
-        b.endTime
-      },${b.subtotal},${b.surcharge},${
+      )},${b.startTime},${b.endTime},${b.subtotal},${b.surcharge},${
         b.estimatedTotal
       },${addOns},${totalHours}`;
     });
@@ -143,7 +154,8 @@ export default function BookingDashboard() {
   return (
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">Bookings Dashboard</h2>
-      <div className="flex flex-wrap gap-4 mb-4">
+      {/* Inline filter & sort controls */}
+      <div className="flex items-center gap-4 mb-4 flex-nowrap">
         <Select onValueChange={(value) => setMonthFilter(value)}>
           <SelectTrigger>
             <SelectValue placeholder="Filter by Month" />
@@ -168,6 +180,17 @@ export default function BookingDashboard() {
             ))}
           </SelectContent>
         </Select>
+        <Select onValueChange={(value) => setSortOption(value)}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sort By" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-asc">Date Ascending</SelectItem>
+            <SelectItem value="date-desc">Date Descending</SelectItem>
+            <SelectItem value="studio-asc">Studio A–Z</SelectItem>
+            <SelectItem value="studio-desc">Studio Z–A</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={handleFilter}>Apply Filters</Button>
         <Button onClick={clearFilters}>Clear Filters</Button>
         <Button onClick={exportCSV}>Export CSV</Button>
@@ -176,15 +199,13 @@ export default function BookingDashboard() {
       <Table>
         <TableHeader>
           <TableRow>
-            {/* New columns for booking time and customer details */}
             <TableHead>Booking Time</TableHead>
             <TableHead>Customer Name</TableHead>
             <TableHead>Customer Phone</TableHead>
             <TableHead>Customer Email</TableHead>
             <TableHead>Studio</TableHead>
-            <TableHead>Start Date</TableHead>
+            <TableHead>Date</TableHead>
             <TableHead>Start Time</TableHead>
-            <TableHead>End Date</TableHead>
             <TableHead>End Time</TableHead>
             <TableHead>Subtotal</TableHead>
             <TableHead>Surcharge</TableHead>
@@ -196,54 +217,13 @@ export default function BookingDashboard() {
         <TableBody>
           {filteredBookings.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={14} className="text-center text-gray-500">
+              <TableCell colSpan={13} className="text-center text-gray-500">
                 No bookings found.
               </TableCell>
             </TableRow>
           ) : (
             filteredBookings.map((booking) => {
-              // Build a dropdown for add-ons using a hover effect.
-              const addOnsDropdown = (
-                <div className="relative group inline-block">
-                  <TableCell>
-                    {booking.items &&
-                    booking.items.filter((item) => item.quantity > 0).length >
-                      0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {(() => {
-                          const displayedItems = booking.items.filter(
-                            (item) => item.quantity > 0
-                          );
-                          const maxDisplay = 3;
-                          return (
-                            <>
-                              {displayedItems
-                                .slice(0, maxDisplay)
-                                .map((item) => (
-                                  <span
-                                    key={item.id}
-                                    className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
-                                  >
-                                    {item.name} ({item.quantity})
-                                  </span>
-                                ))}
-                              {displayedItems.length > maxDisplay && (
-                                <span className="bg-gray-200 text-gray-700 px-2 py-1 rounded-full text-xs">
-                                  +{displayedItems.length - maxDisplay} more
-                                </span>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      "None"
-                    )}
-                  </TableCell>
-                </div>
-              );
-
-              // Compute total hours
+              // Compute total hours (using startDate for both start and end time)
               let totalHours = "N/A";
               try {
                 const startDateTime = parse(
@@ -254,7 +234,7 @@ export default function BookingDashboard() {
                   new Date()
                 );
                 const endDateTime = parse(
-                  `${format(new Date(booking.endDate), "yyyy-MM-dd")} ${
+                  `${format(new Date(booking.startDate), "yyyy-MM-dd")} ${
                     booking.endTime
                   }`,
                   "yyyy-MM-dd h:mm a",
@@ -281,14 +261,13 @@ export default function BookingDashboard() {
                     {format(new Date(booking.startDate), "yyyy-MM-dd")}
                   </TableCell>
                   <TableCell>{booking.startTime}</TableCell>
-                  <TableCell>
-                    {format(new Date(booking.endDate), "yyyy-MM-dd")}
-                  </TableCell>
                   <TableCell>{booking.endTime}</TableCell>
                   <TableCell>${booking.subtotal}</TableCell>
                   <TableCell>${booking.surcharge}</TableCell>
                   <TableCell>${booking.estimatedTotal}</TableCell>
-                  <TableCell>{addOnsDropdown}</TableCell>
+                  <TableCell>
+                    <AddonsDisplay items={booking.items} />
+                  </TableCell>
                   <TableCell>{totalHours} hours</TableCell>
                 </TableRow>
               );
