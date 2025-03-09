@@ -10,10 +10,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
     <DayPicker
       showOutsideDays={showOutsideDays}
       style={{ width: "100%" }} // Ensure full width
-      className={cn("p-5 w-full", className)}
+      className={cn("p-0 w-full", className)}
       classNames={{
+        // On mobile, use a smaller gap; on larger screens use the original gap.
         months:
-          "flex flex-col gap-36 w-full sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+          "flex flex-col gap-4 w-full sm:flex-row sm:gap-36 space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
@@ -24,10 +25,11 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        // Use border-separate with custom border-spacing to create gaps between cells
-        table: "w-full border-separate [border-spacing:22px]",
-        head_row: "flex gap-[17px]",
-        head_cell: "text-muted-foreground  w-8 font-normal text-[0.8rem]",
+        // Reduce cell spacing on mobile, increase on larger screens.
+        table:
+          "w-full border-separate [border-spacing:15px] sm:[border-spacing:22px]",
+        head_row: "flex gap-[17px] sm:gap-[14px]",
+        head_cell: "text-muted-foreground w-8 font-normal text-[0.8rem]",
         row: "flex w-full mt-2 gap-2",
         cell: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:",
@@ -35,7 +37,6 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
             ? "[&:has(>.day-range-end)]: [&:has(>.day-range-start)]: first:[&:has([aria-selected])]: last:[&:has([aria-selected])]:"
             : "[&:has([aria-selected])]:"
         ),
-        // Increase day size and center the content
         day: cn(
           buttonVariants({ variant: "ghost" }),
           "h-10 w-10 p-0 font-normal flex items-center justify-center aria-selected:opacity-100"

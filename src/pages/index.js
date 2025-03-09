@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-// Dialog components for mobile modal
+// Dialog components for desktop (we keep these for non‑mobile views)
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 
 // Custom components and styles
@@ -52,12 +52,12 @@ function DateTimeDisplay({
     }
   }
   return (
-    <div className="flex items-center w-full bg-[#f8f8f8] px-4 py-2 text-black">
-      <MdCalendarMonth size={16} className="mr-1 text-gray-500" />
-      <span className="text-[14px]">{displayDate}</span>
+    <div className="flex items-center w-full bg-[#f8f8f8] px-2 sm:px-4 py-2 text-black">
+      <MdCalendarMonth size={14} className="mr-1 text-gray-500" />
+      <span className="text-[12px] sm:text-[14px]">{displayDate}</span>
       <span className="mx-1 text-gray-500">|</span>
-      <MdAccessTime size={16} className="mr-1 text-gray-500" />
-      <span className="text-[14px]">{displayTime}</span>
+      <MdAccessTime size={14} className="mr-1 text-gray-500" />
+      <span className="text-[12px] sm:text-[14px]">{displayTime}</span>
     </div>
   );
 }
@@ -255,168 +255,161 @@ export default function BookingPage() {
         {/* RIGHT SIDE: Working Hours */}
         <div className={styles.rightSide}>
           {/* Working Hours Start */}
-          <div className="flex flex-col">
-            <label className="font-bold text-xs mb-1">
-              Working Hours Start
-            </label>
-            {isMobile ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div onClick={() => {}}>
-                    <DateTimeDisplay
-                      date={startDate}
-                      time={startTime}
-                      fallbackDate="Mon (05/12)"
-                      fallbackTime="10:00 AM"
-                    />
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4 h-screen overflow-y-auto">
-                  <Calendar
-                    mode="single"
-                    inline
-                    isClearable={true}
-                    selected={startDate}
-                    disabled={{ before: new Date() }}
-                    onSelect={(value) => setStartDate(value)}
-                    numberOfMonths={1}
-                  />
+          <div className={styles.singleRow}>
+            <div className="flex flex-col">
+              <label className="font-bold text-xs mb-1">
+                Working Hours Start
+              </label>
+              {isMobile ? (
+                // In mobile view simply display the date/time info
+                <DateTimeDisplay
+                  date={startDate}
+                  time={startTime}
+                  fallbackDate="Mon (05/12)"
+                  fallbackTime="10:00 AM"
+                />
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div>
+                      <DateTimeDisplay
+                        date={startDate}
+                        time={startTime}
+                        fallbackDate="Mon (05/12)"
+                        fallbackTime="10:00 AM"
+                      />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
+                    align="end"
+                  >
+                    <div className="flex-1">
+                      <Calendar
+                        mode="single"
+                        inline
+                        isClearable={true}
+                        selected={startDate}
+                        disabled={{ before: new Date() }}
+                        onSelect={(value) => setStartDate(value)}
+                        numberOfMonths={1}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <TimeSlider
+                        value={startTime}
+                        onChange={(val) => setStartTime(val)}
+                        selectedDate={startDate}
+                        blockedTimes={blockedTimesForStartDate}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+              {errors.startDate && (
+                <p className="text-red-500 text-xs mt-1">
+                  * Start date is required
+                </p>
+              )}
+              {errors.startTime && (
+                <p className="text-red-500 text-xs mt-1">
+                  * Start time is required or invalid
+                </p>
+              )}
+            </div>
+            {/* Working Hours End */}
+            <div className="flex flex-col">
+              <label className="text-xs font-bold mb-1">
+                Working Hours End
+              </label>
+              {isMobile ? (
+                // In mobile view simply display the date/time info
+                <DateTimeDisplay
+                  date={startDate}
+                  time={endTime}
+                  fallbackDate="Mon (05/12)"
+                  fallbackTime="10:00 AM"
+                />
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <div>
+                      <DateTimeDisplay
+                        date={startDate}
+                        time={endTime}
+                        fallbackDate="Mon (05/12)"
+                        fallbackTime="10:00 AM"
+                      />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
+                    align="end"
+                  >
+                    <div className="flex-1">
+                      <Calendar
+                        mode="single"
+                        inline
+                        isClearable={true}
+                        selected={startDate}
+                        disabled={{ before: new Date() }}
+                        onSelect={(value) => setStartDate(value)}
+                        numberOfMonths={1}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <TimeSlider
+                        value={endTime}
+                        onChange={(val) => setEndTime(val)}
+                        selectedDate={startDate}
+                        blockedTimes={blockedTimesForStartDate}
+                      />
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+              {errors.endTime && (
+                <p className="text-red-500 text-xs mt-1">
+                  * End time is required or must be after start time
+                </p>
+              )}
+            </div>
+          </div>
+          {/* Mobile view extra block: Responsive Calendar and both TimeSliders side by side */}
+          {isMobile && (
+            <div className="flex flex-col gap-0 mt-4 w-full px-2">
+              <div className="w-full overflow-x-auto">
+                <Calendar
+                  mode="single"
+                  inline
+                  isClearable={true}
+                  selected={startDate}
+                  disabled={{ before: new Date() }}
+                  onSelect={(value) => setStartDate(value)}
+                  numberOfMonths={1}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex gap-2 w-full">
+                <div className="flex-1">
                   <TimeSlider
                     value={startTime}
                     onChange={(val) => setStartTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
-                    isMobile={true}
                   />
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <div onClick={() => {}}>
-                    <DateTimeDisplay
-                      date={startDate}
-                      time={startTime}
-                      fallbackDate="Mon (05/12)"
-                      fallbackTime="10:00 AM"
-                    />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
-                  align="end"
-                >
-                  <div className="flex-1">
-                    <Calendar
-                      mode="single"
-                      inline
-                      isClearable={true}
-                      selected={startDate}
-                      disabled={{ before: new Date() }}
-                      onSelect={(value) => setStartDate(value)}
-                      numberOfMonths={1}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <TimeSlider
-                      value={startTime}
-                      onChange={(val) => setStartTime(val)}
-                      selectedDate={startDate}
-                      blockedTimes={blockedTimesForStartDate}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-            {errors.startDate && (
-              <p className="text-red-500 text-xs mt-1">
-                * Start date is required
-              </p>
-            )}
-            {errors.startTime && (
-              <p className="text-red-500 text-xs mt-1">
-                * Start time is required or invalid
-              </p>
-            )}
-          </div>
-          {/* Working Hours End */}
-          <div className="flex flex-col">
-            <label className="text-xs font-bold mb-1">Working Hours End</label>
-            {isMobile ? (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <div onClick={() => {}}>
-                    <DateTimeDisplay
-                      date={startDate}
-                      time={endTime}
-                      fallbackDate="Mon (05/12)"
-                      fallbackTime="10:00 AM"
-                    />
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4 h-screen overflow-y-auto">
-                  <Calendar
-                    mode="single"
-                    inline
-                    isClearable={true}
-                    selected={startDate}
-                    disabled={{ before: new Date() }}
-                    onSelect={(value) => setStartDate(value)}
-                    numberOfMonths={1}
-                  />
+                </div>
+                <div className="flex-1">
                   <TimeSlider
                     value={endTime}
                     onChange={(val) => setEndTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
-                    isMobile={true}
                   />
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <div onClick={() => {}}>
-                    <DateTimeDisplay
-                      date={startDate}
-                      time={endTime}
-                      fallbackDate="Mon (05/12)"
-                      fallbackTime="10:00 AM"
-                    />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[70vh] overflow-y-auto"
-                  align="end"
-                >
-                  <div className="flex-1">
-                    <Calendar
-                      mode="single"
-                      inline
-                      isClearable={true}
-                      selected={startDate}
-                      disabled={{ before: new Date() }}
-                      onSelect={(value) => setStartDate(value)}
-                      numberOfMonths={1}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <TimeSlider
-                      value={endTime}
-                      onChange={(val) => setEndTime(val)}
-                      selectedDate={startDate}
-                      blockedTimes={blockedTimesForStartDate}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-            {errors.endTime && (
-              <p className="text-red-500 text-xs mt-1">
-                * End time is required or must be after start time
-              </p>
-            )}
-          </div>
+                </div>
+              </div>
+            </div>
+          )}
           <Button
             variant="default"
             className="mt-4 h-12 px-10 rounded-none"

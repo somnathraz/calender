@@ -158,7 +158,7 @@ export default function TimeSlider({
   }
 
   return (
-    <div className="flex flex-col items-center mt-7">
+    <div className="flex flex-col items-center mt-1 sm:mt-7">
       {showUpArrow && (
         <button
           onClick={handleUp}
