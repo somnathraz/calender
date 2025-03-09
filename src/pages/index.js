@@ -16,6 +16,8 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+// Dialog components for mobile modal
+import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
 
 // Custom components and styles
 import TimeSlider from "@/components/TimeSlider/TimeSlider";
@@ -98,6 +100,7 @@ export default function BookingPage() {
     }
   }, [startDate, today, setStartDate, setStartTime]);
 
+  // Track screen width to determine mobile view.
   const [monthsToShow, setMonthsToShow] = useState(2);
   useEffect(() => {
     const updateMonthsToShow = () => {
@@ -111,6 +114,8 @@ export default function BookingPage() {
     window.addEventListener("resize", updateMonthsToShow);
     return () => window.removeEventListener("resize", updateMonthsToShow);
   }, []);
+  // Define mobile view based on monthsToShow (1 = mobile)
+  const isMobile = monthsToShow === 1;
 
   // Fetch existing bookings for the selected studio and date.
   useEffect(() => {
@@ -124,15 +129,11 @@ export default function BookingPage() {
         });
         const data = await res.json();
         // Filter bookings by studio and date.
-        console.log(data, "data");
-
         const filteredBookings = (data.bookings || []).filter(
           (booking) =>
             booking.studio === selectedStudio.name &&
             format(new Date(booking.startDate), "yyyy-MM-dd") === formattedDate
         );
-        console.log(filteredBookings, "fillterbookings");
-
         const blockedByDate = computeBlockedTimesByDate(filteredBookings);
         setBlockedTimesByDate(blockedByDate);
       } catch (error) {
@@ -140,7 +141,6 @@ export default function BookingPage() {
       }
     }
     fetchBookings();
-    console.log("Fetching bookings for studio:", selectedStudio);
   }, [selectedStudio, startDate]);
 
   const startDateKey = startDate ? format(startDate, "yyyy-MM-dd") : "";
@@ -186,7 +186,7 @@ export default function BookingPage() {
       alert("Minimum booking time is 1 hour.");
     }
 
-    // Optionally, check for conflicts in the selected day (using a simple 30‑minute step).
+    // Check for conflicts in the selected day (using a simple 30‑minute step).
     let conflictFound = false;
     for (
       let time = timeStringToMinutes(startTime);
@@ -240,14 +240,13 @@ export default function BookingPage() {
                   <SelectItem
                     key={studio.name}
                     value={studio.name}
-                    className="text-xs" // Apply smaller font size
+                    className="text-xs"
                   >
                     {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
             {errors.studio && (
               <p className="text-red-500 text-xs mt-1">* Studio is required</p>
             )}
@@ -260,22 +259,19 @@ export default function BookingPage() {
             <label className="font-bold text-xs mb-1">
               Working Hours Start
             </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <div onClick={() => {}}>
-                  <DateTimeDisplay
-                    date={startDate}
-                    time={startTime}
-                    fallbackDate="Mon (05/12)"
-                    fallbackTime="10:00 AM"
-                  />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent
-                className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
-                align="end"
-              >
-                <div className="flex-1">
+            {isMobile ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div onClick={() => {}}>
+                    <DateTimeDisplay
+                      date={startDate}
+                      time={startTime}
+                      fallbackDate="Mon (05/12)"
+                      fallbackTime="10:00 AM"
+                    />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4">
                   <Calendar
                     mode="single"
                     inline
@@ -285,17 +281,52 @@ export default function BookingPage() {
                     onSelect={(value) => setStartDate(value)}
                     numberOfMonths={1}
                   />
-                </div>
-                <div className="flex-1">
                   <TimeSlider
-                    value={startTime} // or endTime depending on the field
-                    onChange={(val) => setStartTime(val)} // or setEndTime(val)
+                    value={startTime}
+                    onChange={(val) => setStartTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
                   />
-                </div>
-              </PopoverContent>
-            </Popover>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div onClick={() => {}}>
+                    <DateTimeDisplay
+                      date={startDate}
+                      time={startTime}
+                      fallbackDate="Mon (05/12)"
+                      fallbackTime="10:00 AM"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
+                  align="end"
+                >
+                  <div className="flex-1">
+                    <Calendar
+                      mode="single"
+                      inline
+                      isClearable={true}
+                      selected={startDate}
+                      disabled={{ before: new Date() }}
+                      onSelect={(value) => setStartDate(value)}
+                      numberOfMonths={1}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <TimeSlider
+                      value={startTime}
+                      onChange={(val) => setStartTime(val)}
+                      selectedDate={startDate}
+                      blockedTimes={blockedTimesForStartDate}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             {errors.startDate && (
               <p className="text-red-500 text-xs mt-1">
                 * Start date is required
@@ -310,22 +341,19 @@ export default function BookingPage() {
           {/* Working Hours End */}
           <div className="flex flex-col">
             <label className="text-xs font-bold mb-1">Working Hours End</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <div onClick={() => {}}>
-                  <DateTimeDisplay
-                    date={startDate}
-                    time={endTime}
-                    fallbackDate="Mon (05/12)"
-                    fallbackTime="10:00 AM"
-                  />
-                </div>
-              </PopoverTrigger>
-              <PopoverContent
-                className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[70vh] overflow-y-auto"
-                align="end"
-              >
-                <div className="flex-1">
+            {isMobile ? (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div onClick={() => {}}>
+                    <DateTimeDisplay
+                      date={startDate}
+                      time={endTime}
+                      fallbackDate="Mon (05/12)"
+                      fallbackTime="10:00 AM"
+                    />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4">
                   <Calendar
                     mode="single"
                     inline
@@ -335,17 +363,52 @@ export default function BookingPage() {
                     onSelect={(value) => setStartDate(value)}
                     numberOfMonths={1}
                   />
-                </div>
-                <div className="flex-1">
                   <TimeSlider
-                    value={endTime} // or endTime depending on the field
-                    onChange={(val) => setEndTime(val)} // or setEndTime(val)
+                    value={endTime}
+                    onChange={(val) => setEndTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
                   />
-                </div>
-              </PopoverContent>
-            </Popover>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div onClick={() => {}}>
+                    <DateTimeDisplay
+                      date={startDate}
+                      time={endTime}
+                      fallbackDate="Mon (05/12)"
+                      fallbackTime="10:00 AM"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[70vh] overflow-y-auto"
+                  align="end"
+                >
+                  <div className="flex-1">
+                    <Calendar
+                      mode="single"
+                      inline
+                      isClearable={true}
+                      selected={startDate}
+                      disabled={{ before: new Date() }}
+                      onSelect={(value) => setStartDate(value)}
+                      numberOfMonths={1}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <TimeSlider
+                      value={endTime}
+                      onChange={(val) => setEndTime(val)}
+                      selectedDate={startDate}
+                      blockedTimes={blockedTimesForStartDate}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             {errors.endTime && (
               <p className="text-red-500 text-xs mt-1">
                 * End time is required or must be after start time
@@ -361,7 +424,6 @@ export default function BookingPage() {
           </Button>
         </div>
       </div>
-      {/* Remove the standalone calendar section */}
     </div>
   );
 }
