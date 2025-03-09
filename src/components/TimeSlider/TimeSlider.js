@@ -157,7 +157,7 @@ export default function TimeSlider({
   }
 
   return (
-    <div className="flex flex-col items-center w-48">
+    <div className="flex flex-col items-center mt-7">
       {showUpArrow && (
         <button
           onClick={handleUp}
@@ -168,10 +168,7 @@ export default function TimeSlider({
         </button>
       )}
 
-      <div
-        ref={containerRef}
-        className="h-64 w-full overflow-y-auto border border-gray-300 rounded-lg p-2"
-      >
+      <div ref={containerRef} className="h-64 w-full overflow-y-auto p-2">
         {ALL_TIMES.map((slot, i) => {
           const isBlocked = combinedBlocked.has(timeStringToMinutes(slot));
           const isSelected = i === currentIndex;

@@ -267,13 +267,29 @@ export default function BookingPage() {
                   />
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="p-2 w-max bg-[#f8f8f8]" align="end">
-                <TimeSlider
-                  value={startTime}
-                  onChange={(val) => setStartTime(val)}
-                  selectedDate={startDate}
-                  blockedTimes={blockedTimesForStartDate}
-                />
+              <PopoverContent
+                className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
+                align="end"
+              >
+                <div className="flex-1">
+                  <Calendar
+                    mode="single"
+                    inline
+                    isClearable={true}
+                    selected={startDate}
+                    disabled={{ before: new Date() }}
+                    onSelect={(value) => setStartDate(value)}
+                    numberOfMonths={1}
+                  />
+                </div>
+                <div className="flex-1">
+                  <TimeSlider
+                    value={startTime} // or endTime depending on the field
+                    onChange={(val) => setStartTime(val)} // or setEndTime(val)
+                    selectedDate={startDate}
+                    blockedTimes={blockedTimesForStartDate}
+                  />
+                </div>
               </PopoverContent>
             </Popover>
             {errors.startDate && (
@@ -301,13 +317,29 @@ export default function BookingPage() {
                   />
                 </div>
               </PopoverTrigger>
-              <PopoverContent className="p-2 w-max bg-[#f8f8f8]" align="end">
-                <TimeSlider
-                  value={endTime}
-                  onChange={(val) => setEndTime(val)}
-                  selectedDate={startDate}
-                  blockedTimes={blockedTimesForStartDate}
-                />
+              <PopoverContent
+                className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[70vh] overflow-y-auto"
+                align="end"
+              >
+                <div className="flex-1">
+                  <Calendar
+                    mode="single"
+                    inline
+                    isClearable={true}
+                    selected={startDate}
+                    disabled={{ before: new Date() }}
+                    onSelect={(value) => setStartDate(value)}
+                    numberOfMonths={1}
+                  />
+                </div>
+                <div className="flex-1">
+                  <TimeSlider
+                    value={startTime} // or endTime depending on the field
+                    onChange={(val) => setStartTime(val)} // or setEndTime(val)
+                    selectedDate={startDate}
+                    blockedTimes={blockedTimesForStartDate}
+                  />
+                </div>
               </PopoverContent>
             </Popover>
             {errors.endTime && (
@@ -325,20 +357,7 @@ export default function BookingPage() {
           </Button>
         </div>
       </div>
-      {/* Calendar Section */}
-      <div className="mt-4 w-auto sm:w-full flex justify-center items-center">
-        <div className={styles.CalendarWrap}>
-          <Calendar
-            mode="single"
-            inline
-            isClearable={true}
-            selected={startDate}
-            disabled={{ before: new Date() }}
-            onSelect={(value) => setStartDate(value)}
-            numberOfMonths={monthsToShow}
-          />
-        </div>
-      </div>
+      {/* Remove the standalone calendar section */}
     </div>
   );
 }

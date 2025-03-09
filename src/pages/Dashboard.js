@@ -36,7 +36,7 @@ export default function BookingDashboard() {
         const data = await res.json();
         console.log("✅ Fetched bookings:", data);
         if (data && Array.isArray(data.bookings)) {
-          // Sort bookings in descending order by startDate
+          // Sort bookings in descending order by startDate by default.
           const sortedBookings = data.bookings.sort(
             (a, b) => new Date(b.startDate) - new Date(a.startDate)
           );
@@ -101,14 +101,15 @@ export default function BookingDashboard() {
     // Get today's local date (without the time)
     const exportDate = new Date().toLocaleDateString();
 
-    // Create an export header row (removed End Date)
+    // Create an export header row without the Surcharge column.
     const exportHeader = `Exported On: ${exportDate}\n\n`;
 
+    // Added Payment Status column after Studio.
     const headers =
-      "Booking Time,Customer Name,Customer Phone,Customer Email,Studio,Date,Start Time,End Time,Subtotal,Surcharge,Total,Add‑ons,Total Hours\n";
+      "Booking Time,Customer Name,Customer Phone,Customer Email,Studio,Payment Status,Date,Start Time,End Time,Subtotal,Total,Add‑ons,Total Hours\n";
 
     const csvRows = filteredBookings.map((b) => {
-      // Build add-ons string from items array
+      // Build add-ons string from items array.
       const addOns =
         b.items && b.items.length > 0
           ? b.items
@@ -117,7 +118,7 @@ export default function BookingDashboard() {
               .join("; ")
           : "None";
 
-      // Compute total hours using date-fns parse (using startDate for both)
+      // Compute total hours using date-fns parse (using startDate for both start and end times).
       let totalHours = "N/A";
       try {
         const startDateTime = parse(
@@ -139,12 +140,11 @@ export default function BookingDashboard() {
 
       return `${format(new Date(b.createdAt), "yyyy-MM-dd HH:mm:ss")},${
         b.customerName
-      },${b.customerPhone},${b.customerEmail},${b.studio},${format(
-        new Date(b.startDate),
-        "yyyy-MM-dd"
-      )},${b.startTime},${b.endTime},${b.subtotal},${b.surcharge},${
-        b.estimatedTotal
-      },${addOns},${totalHours}`;
+      },${b.customerPhone},${b.customerEmail},${b.studio},${
+        b.paymentStatus
+      },${format(new Date(b.startDate), "yyyy-MM-dd")},${b.startTime},${
+        b.endTime
+      },${b.subtotal},${b.estimatedTotal},${addOns},${totalHours}`;
     });
 
     const csvData = exportHeader + headers + csvRows.join("\n");
@@ -253,11 +253,11 @@ export default function BookingDashboard() {
               <TableHead>Customer Phone</TableHead>
               <TableHead>Customer Email</TableHead>
               <TableHead>Studio</TableHead>
+              <TableHead>Payment Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Start Time</TableHead>
               <TableHead>End Time</TableHead>
               <TableHead>Subtotal</TableHead>
-              <TableHead>Surcharge</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Add‑ons</TableHead>
               <TableHead>Total Hours</TableHead>
@@ -309,13 +309,13 @@ export default function BookingDashboard() {
                     <TableCell>{booking.customerPhone}</TableCell>
                     <TableCell>{booking.customerEmail}</TableCell>
                     <TableCell>{booking.studio}</TableCell>
+                    <TableCell>{booking.paymentStatus}</TableCell>
                     <TableCell>
                       {format(new Date(booking.startDate), "yyyy-MM-dd")}
                     </TableCell>
                     <TableCell>{booking.startTime}</TableCell>
                     <TableCell>{booking.endTime}</TableCell>
                     <TableCell>${booking.subtotal}</TableCell>
-                    <TableCell>${booking.surcharge}</TableCell>
                     <TableCell>${booking.estimatedTotal}</TableCell>
                     <TableCell>
                       <AddonsDisplay items={booking.items} />

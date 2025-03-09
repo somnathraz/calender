@@ -262,7 +262,7 @@ export default function CheckoutPage() {
         <h3 className="text-lg font-bold mb-4">Price Summary</h3>
         <div className="flex flex-col gap-2 text-lg">
           <div className="flex justify-between">
-            <p>Subtotal (Addons)</p>
+            <p>Add ons</p>
             <p>${subtotal.toFixed(2)}</p>
           </div>
           <div className="flex justify-between">
@@ -271,7 +271,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="flex justify-between font-bold text-xl mt-2">
-            <p>Estimated Total</p>
+            <p>Total</p>
             <p className="text-black">${estimatedTotal.toFixed(2)}</p>
           </div>
         </div>
