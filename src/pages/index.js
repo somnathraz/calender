@@ -237,7 +237,11 @@ export default function BookingPage() {
               </SelectTrigger>
               <SelectContent className="bg-[#f8f8f8] text-black">
                 {studiosList.map((studio) => (
-                  <SelectItem key={studio.name} value={studio.name}>
+                  <SelectItem
+                    key={studio.name}
+                    value={studio.name}
+                    className="text-xs" // Apply smaller font size
+                  >
                     {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
                   </SelectItem>
                 ))}
@@ -334,8 +338,8 @@ export default function BookingPage() {
                 </div>
                 <div className="flex-1">
                   <TimeSlider
-                    value={startTime} // or endTime depending on the field
-                    onChange={(val) => setStartTime(val)} // or setEndTime(val)
+                    value={endTime} // or endTime depending on the field
+                    onChange={(val) => setEndTime(val)} // or setEndTime(val)
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
                   />
