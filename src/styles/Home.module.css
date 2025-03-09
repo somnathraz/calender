@@ -55,6 +55,10 @@
   justify-content: center; /* Center vertically */
   padding: 20px;
 }
+.singleRow {
+  display: flex;
+  gap: 10px;
+}
 @media (max-width: 481px) {
   .wrapper {
     padding: 10px;
@@ -71,7 +75,7 @@
     grid-template-columns: 100%;
   }
   .rightSide {
-    flex-flow: column;
+    flex-flow: column-reverse;
     align-items: flex-start;
     gap: 10px;
   }
