@@ -271,7 +271,7 @@ export default function BookingPage() {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4">
+                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4 h-screen overflow-y-auto">
                   <Calendar
                     mode="single"
                     inline
@@ -286,6 +286,7 @@ export default function BookingPage() {
                     onChange={(val) => setStartTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
+                    isMobile={true}
                   />
                 </DialogContent>
               </Dialog>
@@ -353,7 +354,7 @@ export default function BookingPage() {
                     />
                   </div>
                 </DialogTrigger>
-                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4">
+                <DialogContent className="p-2 bg-[#f8f8f8] flex flex-col gap-4 h-screen overflow-y-auto">
                   <Calendar
                     mode="single"
                     inline
@@ -368,6 +369,7 @@ export default function BookingPage() {
                     onChange={(val) => setEndTime(val)}
                     selectedDate={startDate}
                     blockedTimes={blockedTimesForStartDate}
+                    isMobile={true}
                   />
                 </DialogContent>
               </Dialog>

@@ -50,6 +50,7 @@ export default function TimeSlider({
   onChange,
   selectedDate,
   blockedTimes = new Set(),
+  isMobile, // New prop to adjust mobile UI
 }) {
   const isDateToday = selectedDate && isToday(selectedDate);
   console.log(blockedTimes, "blocked times");
@@ -168,7 +169,13 @@ export default function TimeSlider({
         </button>
       )}
 
-      <div ref={containerRef} className="h-64 w-full overflow-y-auto p-2">
+      {/* Conditionally use full height container on mobile */}
+      <div
+        ref={containerRef}
+        className={`${
+          isMobile ? "w-full p-2" : "h-64 w-full overflow-y-auto p-2"
+        }`}
+      >
         {ALL_TIMES.map((slot, i) => {
           const isBlocked = combinedBlocked.has(timeStringToMinutes(slot));
           const isSelected = i === currentIndex;
