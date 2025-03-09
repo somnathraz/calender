@@ -223,7 +223,7 @@ export default function CheckoutPage() {
             .map((item) => (
               <div
                 key={item.id}
-                className="grid grid-cols-3 sm:gap-4 gap-20 items-center py-2"
+                className="grid grid-cols-3  gap-4 items-center py-2"
               >
                 {/* Quantity Control */}
                 <div className="flex items-center justify-center bg-[#f8f8f8] px-4 py-3 font-semibold text-center text-sm w-full">
