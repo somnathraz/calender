@@ -115,6 +115,40 @@ export default function BookingPage() {
     window.addEventListener("resize", updateMonthsToShow);
     return () => window.removeEventListener("resize", updateMonthsToShow);
   }, []);
+
+  useEffect(() => {
+    const sendHeight = () => {
+      // Use the larger of body or documentElement height for accuracy
+      const height = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+      console.log("Sending height:", height);
+      // Replace '*' with your parent's origin for production
+      window.parent.postMessage({ iframeHeight: height }, "*");
+    };
+
+    // Send initial height
+    sendHeight();
+
+    // Use MutationObserver to watch for DOM changes that might change height
+    const observer = new MutationObserver(() => {
+      sendHeight();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+
+    // Also update height on window resize
+    window.addEventListener("resize", sendHeight);
+
+    return () => {
+      window.removeEventListener("resize", sendHeight);
+      observer.disconnect();
+    };
+  }, []);
   // Define mobile view based on monthsToShow (1 = mobile)
   const isMobile = monthsToShow === 1;
 
