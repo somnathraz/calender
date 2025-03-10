@@ -93,3 +93,18 @@ body {
   font-family: var(--font-inter);
   letter-spacing: -0.02em;
 }
+.hidden {
+  display: flex;
+}
+.slider {
+  height: 45vh;
+  overflow-x: auto;
+}
+@media (max-width: 481px) {
+  .hidden {
+    display: none;
+  }
+  .slider {
+    overflow-x: none;
+  }
+}

@@ -46,6 +46,7 @@ function timeStringToMinutes(timeStr) {
 }
 
 export default function TimeSlider({
+  title,
   value,
   onChange,
   selectedDate,
@@ -53,7 +54,6 @@ export default function TimeSlider({
   isMobile, // New prop to adjust mobile UI
 }) {
   const isDateToday = selectedDate && isToday(selectedDate);
-  console.log(blockedTimes, "blocked times");
 
   // If today and current time is >= closingTimeMinutes, no slots are available.
   const now = new Date();
@@ -82,9 +82,9 @@ export default function TimeSlider({
     });
   }
 
-  // 7) Scroll to the selected time slot when currentIndex changes.
+  // 7) Scroll to the selected time slot when currentIndex changes (Only for desktop).
   useEffect(() => {
-    if (containerRef.current) {
+    if (!isMobile && containerRef.current) {
       const slotElement = containerRef.current.querySelector(
         `[data-index="${currentIndex}"]`
       );
@@ -92,7 +92,7 @@ export default function TimeSlider({
         slotElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
     }
-  }, [currentIndex]);
+  }, [currentIndex, isMobile]);
 
   // 8) Helper functions to jump to the next/previous available slot.
   function findNextAvailableIndex(index) {
@@ -158,8 +158,8 @@ export default function TimeSlider({
   }
 
   return (
-    <div className="flex flex-col items-center mt-1 sm:mt-7">
-      {showUpArrow && (
+    <div className="flex flex-col items-center mt-1 ">
+      {/* {showUpArrow && (
         <button
           onClick={handleUp}
           className="mb-2 text-gray-600 hover:text-black"
@@ -167,15 +167,11 @@ export default function TimeSlider({
         >
           <FaAngleUp size={20} />
         </button>
-      )}
+      )} */}
 
-      {/* Conditionally use full height container on mobile */}
-      <div
-        ref={containerRef}
-        className={`${
-          isMobile ? "w-full p-2" : "h-64 w-full overflow-y-auto p-2"
-        }`}
-      >
+      {/* For mobile, use full height; for desktop, allow scrolling */}
+      <div ref={containerRef} className={`${"w-full p-2"}`}>
+        <p className="text-sm font-bold mb-2">Select {title}</p>
         {ALL_TIMES.map((slot, i) => {
           const isBlocked = combinedBlocked.has(timeStringToMinutes(slot));
           const isSelected = i === currentIndex;
@@ -199,13 +195,13 @@ export default function TimeSlider({
         })}
       </div>
 
-      <button
+      {/* <button
         onClick={handleDown}
         className="mt-2 text-gray-600 hover:text-black"
         aria-label="Scroll down"
       >
         <FaAngleDown size={20} />
-      </button>
+      </button> */}
     </div>
   );
 }

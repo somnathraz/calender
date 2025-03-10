@@ -221,42 +221,82 @@ export default function BookingPage() {
         {/* LEFT SIDE: Select Studio */}
         <div className={styles.leftSide}>
           <div className={styles.wrap}>
-            <label className="w-40 text-xs font-bold mb-1">Select Studio</label>
-            <Select
-              value={selectedStudio ? selectedStudio.name : ""}
-              onValueChange={(studioName) => {
-                const studioObj = studiosList.find(
-                  (s) => s.name === studioName
-                );
-                setSelectedStudio(studioObj);
-              }}
-            >
-              <SelectTrigger className="w-full bg-[#f8f8f8] justify-start text-black hover:bg-[#f8f8f8]">
-                <MdLocationOn className="mr-1" />
-                <SelectValue placeholder="Select Studio" />
-              </SelectTrigger>
-              <SelectContent className="bg-[#f8f8f8] text-black">
-                {studiosList.map((studio) => (
-                  <SelectItem
-                    key={studio.name}
-                    value={studio.name}
-                    className="text-xs"
-                  >
-                    {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.studio && (
-              <p className="text-red-500 text-xs mt-1">* Studio is required</p>
-            )}
+            <div className="w-full">
+              <label className="w-40 text-xs font-bold mb-1">
+                Select Studio
+              </label>
+              <Select
+                value={selectedStudio ? selectedStudio.name : ""}
+                onValueChange={(studioName) => {
+                  const studioObj = studiosList.find(
+                    (s) => s.name === studioName
+                  );
+                  setSelectedStudio(studioObj);
+                }}
+              >
+                <SelectTrigger className="w-full bg-[#f8f8f8] justify-start text-black hover:bg-[#f8f8f8]">
+                  <MdLocationOn className="mr-1" />
+                  <SelectValue placeholder="Select Studio" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#f8f8f8] text-black">
+                  {studiosList.map((studio) => (
+                    <SelectItem
+                      key={studio.name}
+                      value={studio.name}
+                      className="text-xs"
+                    >
+                      {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.studio && (
+                <p className="text-red-500 text-xs mt-1">
+                  * Studio is required
+                </p>
+              )}
+            </div>
+            <div className="w-full hidden">
+              <Calendar
+                mode="single"
+                inline
+                isClearable={true}
+                selected={startDate}
+                disabled={{ before: new Date() }}
+                onSelect={(value) => setStartDate(value)}
+                numberOfMonths={1}
+                className="w-full"
+              />
+            </div>
+          </div>
+          <div className={styles.calender}>
+            <div className="flex gap-2 w-full hidden slider">
+              <div className="flex-1">
+                <TimeSlider
+                  title="Start Time"
+                  value={startTime}
+                  onChange={(val) => setStartTime(val)}
+                  selectedDate={startDate}
+                  blockedTimes={blockedTimesForStartDate}
+                />
+              </div>
+              <div className="flex-1">
+                <TimeSlider
+                  title="End Time"
+                  value={endTime}
+                  onChange={(val) => setEndTime(val)}
+                  selectedDate={startDate}
+                  blockedTimes={blockedTimesForStartDate}
+                />
+              </div>
+            </div>
           </div>
         </div>
         {/* RIGHT SIDE: Working Hours */}
         <div className={styles.rightSide}>
           {/* Working Hours Start */}
           <div>
-            <div className={styles.singleRow}>
+            {/* <div className={styles.singleRow}>
               <div className="flex flex-col">
                 <label className="font-bold text-xs mb-1">
                   Working Hours Start
@@ -318,7 +358,7 @@ export default function BookingPage() {
                   </p>
                 )}
               </div>
-              {/* Working Hours End */}
+
               <div className="flex flex-col">
                 <label className="text-xs font-bold mb-1">
                   Working Hours End
@@ -375,7 +415,7 @@ export default function BookingPage() {
                   </p>
                 )}
               </div>
-            </div>
+            </div> */}
             <Button
               variant="default"
               className="block sm:hidden mt-4 h-12 px-10 rounded-none"
@@ -387,7 +427,7 @@ export default function BookingPage() {
           {/* Mobile view extra block: Responsive Calendar and both TimeSliders side by side */}
           {isMobile && (
             <div className="flex flex-col gap-0 mt-4 w-full px-2">
-              <div className="w-full overflow-x-auto">
+              <div className="w-full">
                 <Calendar
                   mode="single"
                   inline
@@ -402,6 +442,7 @@ export default function BookingPage() {
               <div className="flex gap-2 w-full">
                 <div className="flex-1">
                   <TimeSlider
+                    title="Start Time"
                     value={startTime}
                     onChange={(val) => setStartTime(val)}
                     selectedDate={startDate}
@@ -410,6 +451,7 @@ export default function BookingPage() {
                 </div>
                 <div className="flex-1">
                   <TimeSlider
+                    title="End Time"
                     value={endTime}
                     onChange={(val) => setEndTime(val)}
                     selectedDate={startDate}

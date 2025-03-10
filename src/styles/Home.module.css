@@ -11,16 +11,17 @@
 .wrap {
   width: 100%;
   display: flex;
-  justify-content: center;
   height: 100%;
+  gap: 40px;
+  margin-right: 40px;
   flex-flow: column;
   align-items: flex-start;
 }
 .row {
-  width: 70%;
+  width: 60%;
   padding: 20px 40px;
   display: grid;
-  grid-template-columns: 29% 69%;
+  grid-template-columns: 100%;
   /* flex-flow: row; */
   align-items: center;
   justify-content: center;
@@ -33,11 +34,19 @@
     rgba(14, 63, 126, 0.04) 0px 24px 24px -12px;
 }
 .leftSide {
-  display: flex;
-  flex-flow: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 52% 44%;
+  gap: 30px;
+  height: 53vh;
   align-items: center;
   justify-content: flex-start;
+}
+.calender {
+  display: flex;
+  width: 100%;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
 }
 .rightSide {
   width: 100%;
@@ -63,9 +72,18 @@
   .wrapper {
     padding: 10px;
   }
+  .wrap {
+    margin-right: 0px;
+  }
+  .calender {
+    display: none;
+  }
   .singleRow {
     display: flex;
     gap: 10px;
+  }
+  .leftSide {
+    height: 100%;
   }
   .row {
     width: 100%;
