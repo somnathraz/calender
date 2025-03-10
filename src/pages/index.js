@@ -270,8 +270,8 @@ export default function BookingPage() {
             </div>
           </div>
           <div className={styles.calender}>
-            <div className="flex gap-2 w-full hidden slider">
-              <div className="flex-1">
+            <div className="flex gap-2 w-full  h-[120%] hidden slider">
+              <div className="flex-1 h-[120%]">
                 <TimeSlider
                   title="Start Time"
                   value={startTime}

@@ -97,7 +97,7 @@ body {
   display: flex;
 }
 .slider {
-  height: 45vh;
+  height: 52vh;
   overflow-x: auto;
 }
 @media (max-width: 481px) {

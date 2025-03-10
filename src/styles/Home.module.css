@@ -45,6 +45,8 @@
   display: flex;
   width: 100%;
   gap: 10px;
+  height: 120%;
+  margin-top: -20px;
   align-items: center;
   justify-content: center;
 }
@@ -84,6 +86,7 @@
   }
   .leftSide {
     height: 100%;
+    grid-template-columns: 100%;
   }
   .row {
     width: 100%;
