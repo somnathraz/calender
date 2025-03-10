@@ -30,6 +30,7 @@ import {
   timeStringToMinutes,
   computeBlockedTimesByDate,
 } from "@/utils/bookingHelpers";
+import Head from "next/head";
 
 /**
  * DateTimeDisplay Component (Used for Working Hours)
@@ -217,6 +218,20 @@ export default function BookingPage() {
 
   return (
     <div className={styles.wrapper}>
+      <Head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function sendHeight() {
+                var height = document.body.scrollHeight;
+                window.parent.postMessage({ iframeHeight: height }, '*');
+              }
+              window.onload = sendHeight;
+              window.onresize = sendHeight;
+            `,
+          }}
+        />
+      </Head>
       <div className={styles.row}>
         {/* LEFT SIDE: Select Studio */}
         <div className={styles.leftSide}>
