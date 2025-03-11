@@ -42,6 +42,17 @@ export function timeStringToMinutes(timeStr) {
   return hour * 60 + minutes;
 }
 
+export function minutesToTimeString(totalMinutes) {
+  // For example, 480 -> "8:00 AM"
+  const hours24 = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const isAm = hours24 < 12;
+  let displayHour = hours24 % 12;
+  if (displayHour === 0) displayHour = 12;
+  const displayMinutes = minutes.toString().padStart(2, "0");
+  const ampm = isAm ? "AM" : "PM";
+  return `${displayHour}:${displayMinutes} ${ampm}`;
+}
 export function generateDailySlots() {
   const slots = [];
   for (let hour = 8; hour <= 21; hour++) {

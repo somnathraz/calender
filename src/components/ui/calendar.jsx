@@ -14,7 +14,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
       classNames={{
         // On mobile, use a smaller gap; on larger screens use the original gap.
         months:
-          "flex flex-col gap-4 w-full sm:flex-row sm:gap-36 space-y-4 sm:space-x-4 sm:space-y-0",
+          "flex flex-col gap-6 sm:gap-4 w-full sm:flex-row sm:gap-36 space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
@@ -28,9 +28,9 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         // Reduce cell spacing on mobile, increase on larger screens.
         table:
           "w-full border-separate [border-spacing:15px] sm:[border-spacing:22px]",
-        head_row: "flex gap-[17px] sm:gap-[14px]",
-        head_cell: "text-muted-foreground w-8 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2 gap-2",
+        head_row: "flex gap-[17px] sm:gap-[28px]",
+        head_cell: "text-muted-foreground w-8 font-normal text-[1rem]",
+        row: "flex w-full mt-2 gap-2 sm:gap-5",
         cell: cn(
           "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected].day-range-end)]:",
           props.mode === "range"

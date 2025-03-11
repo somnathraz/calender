@@ -10,11 +10,10 @@
 }
 .wrap {
   width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 75% 18%;
   height: 100%;
-  gap: 40px;
-  margin-right: 40px;
-  flex-flow: column;
+  gap: 10px;
   align-items: flex-start;
 }
 .row {
@@ -35,7 +34,7 @@
 }
 .leftSide {
   display: grid;
-  grid-template-columns: 52% 44%;
+  grid-template-columns: 59% 37%;
   gap: 30px;
   height: 53vh;
   align-items: center;
@@ -75,6 +74,7 @@
     padding: 10px;
   }
   .wrap {
+    grid-template-columns: 71% 24%;
     margin-right: 0px;
   }
   .calender {

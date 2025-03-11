@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useMemo } from "react";
 import { format, startOfDay, addDays, isToday } from "date-fns";
 import { MdCalendarMonth, MdAccessTime, MdLocationOn } from "react-icons/md";
 // shadcn/ui components
@@ -11,57 +11,19 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-// Dialog components for desktop (we keep these for non‑mobile views)
-import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
-
-// Custom components and styles
-import TimeSlider from "@/components/TimeSlider/TimeSlider";
 import styles from "@/styles/Home.module.css";
 import { BookingContext } from "@/context/BookingContext";
 import { useRouter } from "next/router";
 
-// Import helper for time conversion and blocked times
+// Import helper for blocked times
 import {
-  timeStringToMinutes,
   computeBlockedTimesByDate,
+  minutesToTimeString,
+  timeStringToMinutes,
 } from "@/utils/bookingHelpers";
-import Head from "next/head";
 
-/**
- * DateTimeDisplay Component (Used for Working Hours)
- */
-function DateTimeDisplay({
-  date,
-  time,
-  fallbackDate = "Mon (05/12)",
-  fallbackTime = "10:00 AM",
-}) {
-  const displayDate = date ? format(date, "EEE (MM/dd)") : fallbackDate;
-  let displayTime = date ? time : fallbackTime;
-
-  if (date && isToday(date)) {
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const closingTimeMinutes = 23 * 60;
-    if (nowMinutes >= closingTimeMinutes) {
-      displayTime = "---:--";
-    }
-  }
-  return (
-    <div className="flex items-center w-full bg-[#f8f8f8] px-2 sm:px-4 py-2 text-black">
-      <MdCalendarMonth size={14} className="mr-1 text-gray-500" />
-      <span className="text-[12px] sm:text-[14px]">{displayDate}</span>
-      <span className="mx-1 text-gray-500">|</span>
-      <MdAccessTime size={14} className="mr-1 text-gray-500" />
-      <span className="text-[12px] sm:text-[14px]">{displayTime}</span>
-    </div>
-  );
-}
+// Import TimeSlider (NEW)
+import TimeSlider from "@/components/TimeSlider/TimeSlider";
 
 export default function BookingPage() {
   const {
@@ -72,22 +34,25 @@ export default function BookingPage() {
     setStartDate,
     startTime,
     setStartTime,
-    endTime,
     setEndTime,
+    endTime,
   } = useContext(BookingContext);
   const today = startOfDay(new Date());
   const router = useRouter();
+
   const [errors, setErrors] = useState({
     studio: false,
     startDate: false,
     startTime: false,
-    endTime: false,
   });
+
+  // Local state for booking hours. Default is 0 (i.e. not selected).
+  const [bookingHours, setBookingHours] = useState(0);
 
   // Compute blocked times for the selected date.
   const [blockedTimesByDate, setBlockedTimesByDate] = useState({});
 
-  // If today's date is selected and current time is past closing, update to tomorrow.
+  // Handle calendar update when today is selected but past closing time
   useEffect(() => {
     if (startDate && isToday(startDate)) {
       const now = new Date();
@@ -100,57 +65,18 @@ export default function BookingPage() {
       }
     }
   }, [startDate, today, setStartDate, setStartTime]);
-
-  // Track screen width to determine mobile view.
-  const [monthsToShow, setMonthsToShow] = useState(2);
   useEffect(() => {
-    const updateMonthsToShow = () => {
-      if (window.innerWidth < 768) {
-        setMonthsToShow(1);
-      } else {
-        setMonthsToShow(2);
-      }
-    };
-    updateMonthsToShow();
-    window.addEventListener("resize", updateMonthsToShow);
-    return () => window.removeEventListener("resize", updateMonthsToShow);
-  }, []);
-
-  useEffect(() => {
-    const sendHeight = () => {
-      // Use the larger of body or documentElement height for accuracy
-      const height = Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight
-      );
-      console.log("Sending height:", height);
-      // Replace '*' with your parent's origin for production
-      window.parent.postMessage({ iframeHeight: height }, "*");
-    };
-
-    // Send initial height
-    sendHeight();
-
-    // Use MutationObserver to watch for DOM changes that might change height
-    const observer = new MutationObserver(() => {
-      sendHeight();
-    });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-    });
-
-    // Also update height on window resize
-    window.addEventListener("resize", sendHeight);
-
-    return () => {
-      window.removeEventListener("resize", sendHeight);
-      observer.disconnect();
-    };
-  }, []);
-  // Define mobile view based on monthsToShow (1 = mobile)
-  const isMobile = monthsToShow === 1;
+    if (startTime && bookingHours > 0) {
+      // Convert start time to minutes, add (bookingHours * 60), then convert back to string
+      const startMins = timeStringToMinutes(startTime);
+      const endMins = startMins + bookingHours * 60;
+      const newEndTime = minutesToTimeString(endMins);
+      setEndTime(newEndTime);
+    } else {
+      // If bookingHours=0 or no start time, clear endTime
+      setEndTime("");
+    }
+  }, [startTime, bookingHours, setEndTime]);
 
   // Fetch existing bookings for the selected studio and date.
   useEffect(() => {
@@ -163,7 +89,7 @@ export default function BookingPage() {
           headers: { "Content-Type": "application/json" },
         });
         const data = await res.json();
-        // Filter bookings by studio and date.
+        // Compute blocked times
         const filteredBookings = (data.bookings || []).filter(
           (booking) =>
             booking.studio === selectedStudio.name &&
@@ -179,137 +105,170 @@ export default function BookingPage() {
   }, [selectedStudio, startDate]);
 
   const startDateKey = startDate ? format(startDate, "yyyy-MM-dd") : "";
-  const blockedTimesForStartDate =
-    blockedTimesByDate[startDateKey] || new Set();
+  const blockedTimesForStartDate = useMemo(
+    () => blockedTimesByDate[startDateKey] || new Set(),
+    [blockedTimesByDate, startDateKey]
+  );
+
+  // Determine the minimum allowed booking hours
+  const minBookingHours =
+    selectedStudio &&
+    selectedStudio.name === "BOTH THE LAB & THE EXTENSION FOR EVENTS"
+      ? 2
+      : 0;
 
   // Validate and process booking details.
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Build an errors object
     const newErrors = {
       studio: !selectedStudio,
       startDate: !startDate,
       startTime: !startTime,
-      endTime: !endTime,
+      endTime: !endTime, // We'll assume endTime is being auto-calculated
     };
 
-    if (startTime && timeStringToMinutes(startTime) >= 23 * 60) {
+    // 1) Basic validations
+    if (!selectedStudio) {
+      alert("Please select a studio.");
+    }
+
+    if (bookingHours <= 0) {
+      alert("Please select the number of booking hours (at least 1).");
+      // If bookingHours is zero or negative, also mark startTime as invalid
       newErrors.startTime = true;
-      alert("Invalid start time. Must be before 11:00 PM.");
-    }
-    // Create Date objects using the same date for both start and end times.
-    const startDateTime = new Date(startDate);
-    const endDateTime = new Date(startDate);
-    const startMinutes = timeStringToMinutes(startTime);
-    const endMinutes = timeStringToMinutes(endTime);
-
-    startDateTime.setHours(
-      Math.floor(startMinutes / 60),
-      startMinutes % 60,
-      0,
-      0
-    );
-    endDateTime.setHours(Math.floor(endMinutes / 60), endMinutes % 60, 0, 0);
-
-    if (endDateTime <= startDateTime) {
       newErrors.endTime = true;
-      alert("End time must be after start time.");
     }
 
-    // Minimum booking duration check (1 hour).
-    const diffInMinutes = (endDateTime - startDateTime) / 60000;
-    if (diffInMinutes < 60) {
-      newErrors.endTime = true;
-      alert("Minimum booking time is 1 hour.");
+    if (!startDate) {
+      alert("Please select a date.");
     }
 
-    // Check for conflicts in the selected day (using a simple 30‑minute step).
-    let conflictFound = false;
-    for (
-      let time = timeStringToMinutes(startTime);
-      time < timeStringToMinutes(endTime);
-      time += 30
-    ) {
-      if (blockedTimesForStartDate.has(time)) {
-        conflictFound = true;
-        break;
-      }
+    if (!startTime) {
+      alert("Please select a start time.");
     }
-    if (conflictFound) {
-      alert("Time slots not available on the selected day.");
+
+    if (!endTime) {
+      alert("Something went wrong with end time calculation.");
+    }
+
+    // 2) Update local error state
+    setErrors(newErrors);
+
+    // If any validation failed, stop here
+    if (Object.values(newErrors).some((val) => val === true)) {
       return;
     }
 
-    if (
-      newErrors.studio ||
-      newErrors.startDate ||
-      newErrors.startTime ||
-      newErrors.endTime
-    ) {
-      setErrors(newErrors);
-      return;
+    try {
+      // 4) Make the API call
+
+      // 5) Navigate to the next page on success
+      router.push("/addons");
+    } catch (error) {
+      console.error("Error during booking:", error);
+      alert("Sorry, something went wrong while booking. Please try again.");
     }
-    router.push("/addons");
   };
 
   return (
     <div className={styles.wrapper}>
-      <Head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              function sendHeight() {
-                var height = document.body.scrollHeight;
-                window.parent.postMessage({ iframeHeight: height }, '*');
-              }
-              window.onload = sendHeight;
-              window.onresize = sendHeight;
-            `,
-          }}
-        />
-      </Head>
       <div className={styles.row}>
-        {/* LEFT SIDE: Select Studio */}
+        {/* LEFT SIDE: Studio Selection, Booking Hours, Start Time, Calendar */}
         <div className={styles.leftSide}>
-          <div className={styles.wrap}>
-            <div className="w-full">
-              <label className="w-40 text-xs font-bold mb-1">
-                Select Studio
-              </label>
-              <Select
-                value={selectedStudio ? selectedStudio.name : ""}
-                onValueChange={(studioName) => {
-                  const studioObj = studiosList.find(
-                    (s) => s.name === studioName
-                  );
-                  setSelectedStudio(studioObj);
-                }}
-              >
-                <SelectTrigger className="w-full bg-[#f8f8f8] justify-start text-black hover:bg-[#f8f8f8]">
-                  <MdLocationOn className="mr-1" />
-                  <SelectValue placeholder="Select Studio" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#f8f8f8] text-black">
-                  {studiosList.map((studio) => (
-                    <SelectItem
-                      key={studio.name}
-                      value={studio.name}
-                      className="text-xs"
-                    >
-                      {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.studio && (
+          <div>
+            <div className={styles.wrap}>
+              <div className="w-full">
+                <label className="w-40 text-xs font-bold mb-1">
+                  Select Studio
+                </label>
+                <Select
+                  value={selectedStudio ? selectedStudio.name : ""}
+                  onValueChange={(studioName) => {
+                    const studioObj = studiosList.find(
+                      (s) => s.name === studioName
+                    );
+                    setSelectedStudio(studioObj);
+                    setBookingHours(0);
+                    setStartTime("");
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-[#f8f8f8] text-black">
+                    <MdLocationOn className="mr-1" />
+                    <SelectValue placeholder="Select Studio" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#f8f8f8] text-black">
+                    {studiosList.map((studio) => (
+                      <SelectItem
+                        key={studio.name}
+                        value={studio.name}
+                        className="text-xs"
+                      >
+                        {studio.name} (${studio.pricePerHour.toFixed(2)}/Hr)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.studio && (
+                  <p className="text-red-500 text-xs mt-1">
+                    * Studio is required
+                  </p>
+                )}
+              </div>
+
+              {/* Booking Hours */}
+              <div className="w-full mt-1">
+                <label className="text-xs font-bold mb-1 block">
+                  Booking Hours
+                </label>
+                <div className="flex items-center p-[6px]  bg-[#f8f8f8]">
+                  <button
+                    onClick={() =>
+                      setBookingHours((prev) =>
+                        Math.max(minBookingHours, prev - 1)
+                      )
+                    }
+                    className="px-2"
+                  >
+                    –
+                  </button>
+                  <span className="mx-2">{bookingHours}</span>
+                  <button
+                    onClick={() =>
+                      setBookingHours((prev) => Math.min(18, prev + 1))
+                    }
+                    className="px-2"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Start Time using TimeSlider */}
+              {/* <div className="w-full mt-4">
+              <label className="text-xs font-bold mb-1 block">Start Time</label>
+              {bookingHours <= 0 ? (
+                <div className="text-gray-500">Select booking hours first</div>
+              ) : (
+                <TimeSlider
+                  title="Start Time"
+                  value={startTime}
+                  onChange={setStartTime}
+                  selectedDate={startDate}
+                  blockedTimes={blockedTimesForStartDate}
+                  bookingHours={bookingHours} // Pass selected booking hours
+                />
+              )}
+              {errors.startTime && (
                 <p className="text-red-500 text-xs mt-1">
-                  * Studio is required
+                  * Start time is required
                 </p>
               )}
+            </div> */}
             </div>
-            <div className="w-full hidden">
+            <div className="w-full mt-4">
               <Calendar
                 mode="single"
                 inline
-                isClearable={true}
                 selected={startDate}
                 disabled={{ before: new Date() }}
                 onSelect={(value) => setStartDate(value)}
@@ -318,201 +277,35 @@ export default function BookingPage() {
               />
             </div>
           </div>
-          <div className={styles.calender}>
-            <div className="flex gap-2 w-full  h-[120%] hidden slider">
-              <div className="flex-1 h-[120%]">
-                <TimeSlider
-                  title="Start Time"
-                  value={startTime}
-                  onChange={(val) => setStartTime(val)}
-                  selectedDate={startDate}
-                  blockedTimes={blockedTimesForStartDate}
-                />
-              </div>
-              <div className="flex-1">
-                <TimeSlider
-                  title="End Time"
-                  value={endTime}
-                  onChange={(val) => setEndTime(val)}
-                  selectedDate={startDate}
-                  blockedTimes={blockedTimesForStartDate}
-                />
-              </div>
-            </div>
+          <div className="w-full h-full">
+            <label className="text-xs font-bold mb-1 block">Start Time</label>
+            {bookingHours <= 0 ? (
+              <div className="text-gray-500">Select booking hours first</div>
+            ) : (
+              <TimeSlider
+                title="Start Time"
+                value={startTime}
+                onChange={setStartTime}
+                selectedDate={startDate}
+                blockedTimes={blockedTimesForStartDate}
+                bookingHours={bookingHours} // Pass selected booking hours
+              />
+            )}
+            {errors.startTime && (
+              <p className="text-red-500 text-xs mt-1">
+                * Start time is required
+              </p>
+            )}
           </div>
-        </div>
-        {/* RIGHT SIDE: Working Hours */}
-        <div className={styles.rightSide}>
-          {/* Working Hours Start */}
-          <div>
-            {/* <div className={styles.singleRow}>
-              <div className="flex flex-col">
-                <label className="font-bold text-xs mb-1">
-                  Working Hours Start
-                </label>
-                {isMobile ? (
-                  // In mobile view simply display the date/time info
-                  <DateTimeDisplay
-                    date={startDate}
-                    time={startTime}
-                    fallbackDate="Mon (05/12)"
-                    fallbackTime="10:00 AM"
-                  />
-                ) : (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div>
-                        <DateTimeDisplay
-                          date={startDate}
-                          time={startTime}
-                          fallbackDate="Mon (05/12)"
-                          fallbackTime="10:00 AM"
-                        />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
-                      align="end"
-                    >
-                      <div className="flex-1">
-                        <Calendar
-                          mode="single"
-                          inline
-                          isClearable={true}
-                          selected={startDate}
-                          disabled={{ before: new Date() }}
-                          onSelect={(value) => setStartDate(value)}
-                          numberOfMonths={1}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <TimeSlider
-                          value={startTime}
-                          onChange={(val) => setStartTime(val)}
-                          selectedDate={startDate}
-                          blockedTimes={blockedTimesForStartDate}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-                {errors.startDate && (
-                  <p className="text-red-500 text-xs mt-1">
-                    * Start date is required
-                  </p>
-                )}
-                {errors.startTime && (
-                  <p className="text-red-500 text-xs mt-1">
-                    * Start time is required or invalid
-                  </p>
-                )}
-              </div>
 
-              <div className="flex flex-col">
-                <label className="text-xs font-bold mb-1">
-                  Working Hours End
-                </label>
-                {isMobile ? (
-                  // In mobile view simply display the date/time info
-                  <DateTimeDisplay
-                    date={startDate}
-                    time={endTime}
-                    fallbackDate="Mon (05/12)"
-                    fallbackTime="10:00 AM"
-                  />
-                ) : (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <div>
-                        <DateTimeDisplay
-                          date={startDate}
-                          time={endTime}
-                          fallbackDate="Mon (05/12)"
-                          fallbackTime="10:00 AM"
-                        />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="p-2 bg-[#f8f8f8] flex flex-col md:flex-row gap-4 w-full md:w-[600px] max-h-[80vh] overflow-y-auto"
-                      align="end"
-                    >
-                      <div className="flex-1">
-                        <Calendar
-                          mode="single"
-                          inline
-                          isClearable={true}
-                          selected={startDate}
-                          disabled={{ before: new Date() }}
-                          onSelect={(value) => setStartDate(value)}
-                          numberOfMonths={1}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <TimeSlider
-                          value={endTime}
-                          onChange={(val) => setEndTime(val)}
-                          selectedDate={startDate}
-                          blockedTimes={blockedTimesForStartDate}
-                        />
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-                {errors.endTime && (
-                  <p className="text-red-500 text-xs mt-1">
-                    * End time is required or must be after start time
-                  </p>
-                )}
-              </div>
-            </div> */}
-            <Button
-              variant="default"
-              className="block sm:hidden mt-4 h-12 px-10 rounded-none"
-              onClick={handleNext}
-            >
-              Next
-            </Button>
-          </div>
-          {/* Mobile view extra block: Responsive Calendar and both TimeSliders side by side */}
-          {isMobile && (
-            <div className="flex flex-col gap-0 mt-4 w-full px-2">
-              <div className="w-full">
-                <Calendar
-                  mode="single"
-                  inline
-                  isClearable={true}
-                  selected={startDate}
-                  disabled={{ before: new Date() }}
-                  onSelect={(value) => setStartDate(value)}
-                  numberOfMonths={1}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex gap-2 w-full">
-                <div className="flex-1">
-                  <TimeSlider
-                    title="Start Time"
-                    value={startTime}
-                    onChange={(val) => setStartTime(val)}
-                    selectedDate={startDate}
-                    blockedTimes={blockedTimesForStartDate}
-                  />
-                </div>
-                <div className="flex-1">
-                  <TimeSlider
-                    title="End Time"
-                    value={endTime}
-                    onChange={(val) => setEndTime(val)}
-                    selectedDate={startDate}
-                    blockedTimes={blockedTimesForStartDate}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Calendar */}
+        </div>
+
+        {/* NEXT BUTTON */}
+        <div className={styles.rightSide}>
           <Button
             variant="default"
-            className="hidden sm:block mt-4 h-12 px-10 rounded-none"
+            className="mt-4 h-12 px-10"
             onClick={handleNext}
           >
             Next

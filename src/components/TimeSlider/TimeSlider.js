@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import { FaAngleUp, FaAngleDown } from "react-icons/fa";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { isToday } from "date-fns";
 
-// 1) Generate an array of times in 1‑hour increments from 6:00 AM to 11:00 PM.
+// Generate an array of times in 1-hour increments from 6:00 AM to 11:00 PM.
 function generateTimes() {
   const times = [];
   for (let hour = 6; hour <= 23; hour++) {
@@ -15,26 +14,7 @@ function generateTimes() {
 
 const ALL_TIMES = generateTimes();
 
-// 2) Get the nearest valid time index.
-function getNearestValidTimeIndex() {
-  const now = new Date();
-  const rounded = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours() + (now.getMinutes() > 0 ? 1 : 0),
-    0,
-    0
-  );
-  const hour = rounded.getHours();
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  const period = hour < 12 ? "AM" : "PM";
-  const formatted = `${h12}:00 ${period}`;
-  const index = ALL_TIMES.indexOf(formatted);
-  return index !== -1 ? index : 0;
-}
-
-// 3) Convert a time string like "11:00 AM" to minutes after midnight.
+// Convert a time string like "11:00 AM" to minutes after midnight.
 function timeStringToMinutes(timeStr) {
   const [time, period] = timeStr.split(" ");
   const [hourStr, minuteStr] = time.split(":");
@@ -45,44 +25,56 @@ function timeStringToMinutes(timeStr) {
   return hour * 60 + minutes;
 }
 
+/**
+ * TimeSlider Component
+ */
 export default function TimeSlider({
   title,
   value,
   onChange,
   selectedDate,
   blockedTimes = new Set(),
-  isMobile, // New prop to adjust mobile UI
+  isMobile,
+  bookingHours = 0, // booking hours required for continuous availability
 }) {
-  const isDateToday = selectedDate && isToday(selectedDate);
+  // Compute the available times based on the bookingHours requirement.
+  const availableTimes = useMemo(() => {
+    if (!bookingHours || bookingHours <= 0) return ALL_TIMES;
 
-  // If today and current time is >= closingTimeMinutes, no slots are available.
-  const now = new Date();
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const closingTimeMinutes = 23 * 60;
-  const noSlotsAvailable = isDateToday && nowMinutes >= closingTimeMinutes;
+    return ALL_TIMES.filter((slot) => {
+      const slotMins = timeStringToMinutes(slot);
+      // Ensure the entire block fits before 11:00 PM
+      if (slotMins + bookingHours * 60 > 23 * 60) return false;
 
-  // 4) Determine the initial index.
-  const nearestIndex = isDateToday ? getNearestValidTimeIndex() : 0;
-  const initialIndex = isDateToday ? nearestIndex : ALL_TIMES.indexOf(value);
-  const [currentIndex, setCurrentIndex] = useState(
-    initialIndex >= 0 ? initialIndex : 0
-  );
+      // Check each hour in the block to ensure it's not blocked.
+      for (let i = 0; i < bookingHours; i++) {
+        const checkTime = slotMins + i * 60;
+        if (blockedTimes.has(checkTime)) return false;
+      }
+      return true;
+    });
+  }, [bookingHours, blockedTimes]);
 
-  // 5) Scroll container reference.
+  // Keep track of selected index
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Scroll container reference
   const containerRef = useRef(null);
 
-  // 6) Create a combined blocked set (in minutes): include those passed via props plus any past slots (if today).
-  const combinedBlocked = new Set(blockedTimes);
-  if (isDateToday) {
-    ALL_TIMES.forEach((slot) => {
-      const slotMins = timeStringToMinutes(slot);
-      if (slotMins < nowMinutes) {
-        combinedBlocked.add(slotMins);
+  // Reset selected time if the previous selection is no longer available
+  useEffect(() => {
+    if (availableTimes.length > 0) {
+      // Ensure the selected time is within the available options
+      if (!availableTimes.includes(value)) {
+        setCurrentIndex(0);
+        onChange(availableTimes[0]); // Auto-select the first available slot
       }
-    });
-  }
+    } else {
+      onChange(""); // No available slots
+    }
+  }, [availableTimes, onChange]);
 
-  // 7) Scroll to the selected time slot when currentIndex changes (Only for desktop).
+  // Scroll to the selected time slot when currentIndex changes
   useEffect(() => {
     if (!isMobile && containerRef.current) {
       const slotElement = containerRef.current.querySelector(
@@ -94,114 +86,38 @@ export default function TimeSlider({
     }
   }, [currentIndex, isMobile]);
 
-  // 8) Helper functions to jump to the next/previous available slot.
-  function findNextAvailableIndex(index) {
-    let i = index;
-    while (
-      i < ALL_TIMES.length &&
-      combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))
-    ) {
-      i++;
-    }
-    return i < ALL_TIMES.length ? i : index;
-  }
-  function findPrevAvailableIndex(index) {
-    let i = index;
-    while (i >= 0 && combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))) {
-      i--;
-    }
-    return i >= 0 ? i : index;
-  }
-
-  useEffect(() => {
-    if (
-      !noSlotsAvailable &&
-      combinedBlocked.has(timeStringToMinutes(ALL_TIMES[currentIndex]))
-    ) {
-      const newIndex = findNextAvailableIndex(currentIndex);
-      if (newIndex !== currentIndex) {
-        setCurrentIndex(newIndex);
-      }
-    } else if (!noSlotsAvailable) {
-      onChange(ALL_TIMES[currentIndex]);
-    }
-  }, [combinedBlocked, currentIndex, onChange, noSlotsAvailable]);
-
-  // 9) Arrow handlers.
-  function handleUp() {
-    let newIndex = isDateToday
-      ? Math.max(nearestIndex, currentIndex - 1)
-      : Math.max(0, currentIndex - 1);
-    newIndex = findPrevAvailableIndex(newIndex);
-    setCurrentIndex(newIndex);
-  }
-  function handleDown() {
-    let newIndex = Math.min(ALL_TIMES.length - 1, currentIndex + 1);
-    newIndex = findNextAvailableIndex(newIndex);
-    setCurrentIndex(newIndex);
-  }
-
-  // 10) If no slots are available, show a message.
-  if (noSlotsAvailable) {
+  // If no slots are available, show a message.
+  if (availableTimes.length === 0) {
     return (
-      <div className="text-red-500 font-bold">No slots available for today</div>
+      <div className="text-red-500 font-bold">
+        No available slots for the selected duration
+      </div>
     );
   }
 
-  const showUpArrow =
-    !isDateToday || (isDateToday && currentIndex > nearestIndex);
-
-  // 11) Handle slot click.
-  function handleSlotClick(i) {
-    if (combinedBlocked.has(timeStringToMinutes(ALL_TIMES[i]))) return;
-    setCurrentIndex(i);
-  }
-
   return (
-    <div className="flex flex-col items-center mt-1 ">
-      {/* {showUpArrow && (
-        <button
-          onClick={handleUp}
-          className="mb-2 text-gray-600 hover:text-black"
-          aria-label="Scroll up"
-        >
-          <FaAngleUp size={20} />
-        </button>
-      )} */}
-
-      {/* For mobile, use full height; for desktop, allow scrolling */}
-      <div ref={containerRef} className={`${"w-full p-2"}`}>
-        <p className="text-sm font-bold mb-2">Select {title}</p>
-        {ALL_TIMES.map((slot, i) => {
-          const isBlocked = combinedBlocked.has(timeStringToMinutes(slot));
+    <div className="flex flex-col items-center mt-1">
+      <div ref={containerRef} className="w-full p-2 sm:h-[500px] overflow-auto">
+        {availableTimes.map((slot, i) => {
           const isSelected = i === currentIndex;
-          const slotClass = isBlocked
-            ? "bg-gray-200 text-gray-400 pointer-events-none"
+          const slotClass = isSelected
+            ? "border border-blue-500 bg-white"
             : "bg-white text-black cursor-pointer hover:bg-blue-50";
-          const selectedClass = isSelected
-            ? "border border-blue-500"
-            : "border border-transparent";
-
           return (
             <div
               key={slot}
               data-index={i}
-              onClick={() => handleSlotClick(i)}
-              className={`mb-2 p-2 rounded text-center ${slotClass} ${selectedClass}`}
+              onClick={() => {
+                setCurrentIndex(i);
+                onChange(slot);
+              }}
+              className={`mb-2 p-2 rounded text-center ${slotClass}`}
             >
               {slot}
             </div>
           );
         })}
       </div>
-
-      {/* <button
-        onClick={handleDown}
-        className="mt-2 text-gray-600 hover:text-black"
-        aria-label="Scroll down"
-      >
-        <FaAngleDown size={20} />
-      </button> */}
     </div>
   );
 }
