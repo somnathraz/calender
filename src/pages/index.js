@@ -234,7 +234,7 @@ export default function BookingPage() {
                   <span className="mx-2">{bookingHours}</span>
                   <button
                     onClick={() =>
-                      setBookingHours((prev) => Math.min(18, prev + 1))
+                      setBookingHours((prev) => Math.min(17, prev + 1))
                     }
                     className="px-2"
                   >
